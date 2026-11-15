@@ -1,41 +1,9 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
-const config = require('../configs/config');
 const { query } = require('../configs/database');
+const { autentikasi, otorisasi, idValid } = require('../middlewares/otorisasi');
 
 const router = express.Router({ mergeParams: true });
 const kolomCatatan = 'id_catatan, id_antrian, id_penulis, isi_catatan, created_at, updated_at';
-
-function idValid(value) {
-    return typeof value === 'string'
-        && /^[1-9][0-9]{0,18}$/.test(value)
-        && BigInt(value) <= 9223372036854775807n;
-}
-
-function autentikasi(req, res, next) {
-    const token = /^Bearer ([^\s]+)$/i.exec(req.get('authorization') ?? '');
-    if (!token) {
-        return res.status(401).json({ message: 'Token login diperlukan.' });
-    }
-
-    if (!config.jwt.secret || config.jwt.secret === 'your_jwt_secret_here') {
-        return res.status(503).json({ message: 'Autentikasi belum dikonfigurasi.' });
-    }
-
-    let payload;
-    try {
-        payload = jwt.verify(token[1], config.jwt.secret, { algorithms: ['HS256'] });
-    } catch {
-        return res.status(401).json({ message: 'Token login tidak valid atau sudah kedaluwarsa.' });
-    }
-
-    if (!idValid(payload?.sub) || !Number.isFinite(payload.exp)) {
-        return res.status(401).json({ message: 'Identitas pada token login tidak valid.' });
-    }
-
-    res.locals.idPengguna = payload.sub;
-    next();
-}
 
 function validasiId(req, res, next) {
     const { idAntrian, idCatatan } = req.params;
@@ -57,7 +25,7 @@ function validasiIsi(req, res, next) {
 
 router.use(autentikasi, validasiId);
 
-router.get('/', async (req, res) => {
+router.get('/', otorisasi('Mahasiswa', 'Dosen'), async (req, res) => {
     const { rows } = await query(`
         SELECT c.id_catatan, c.id_antrian, c.id_penulis, c.isi_catatan, c.created_at, c.updated_at
         FROM antrian a
@@ -74,7 +42,7 @@ router.get('/', async (req, res) => {
     return res.json({ data: rows[0].id_catatan === null ? [] : rows });
 });
 
-router.post('/', validasiIsi, async (req, res) => {
+router.post('/', otorisasi('Dosen'), validasiIsi, async (req, res) => {
     const { rows } = await query(`
         INSERT INTO catatan_bimbingan (id_antrian, id_penulis, isi_catatan)
         SELECT a.id_antrian, j.id_dosen, $3
@@ -91,7 +59,7 @@ router.post('/', validasiIsi, async (req, res) => {
     return res.status(201).json({ data: rows[0] });
 });
 
-router.patch('/:idCatatan', validasiId, validasiIsi, async (req, res) => {
+router.patch('/:idCatatan', validasiId, otorisasi('Dosen'), validasiIsi, async (req, res) => {
     const { rows } = await query(`
         UPDATE catatan_bimbingan AS c
         SET isi_catatan = $4, updated_at = CURRENT_TIMESTAMP
