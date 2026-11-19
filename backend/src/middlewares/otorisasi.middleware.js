@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../configs/config');
+const ApiError = require('../utils/apiError');
 
 const PERAN = Object.freeze(['Mahasiswa', 'Dosen', 'Admin']);
 
@@ -12,22 +13,22 @@ function idValid(value) {
 function autentikasi(req, res, next) {
     const token = /^Bearer ([^\s]+)$/i.exec(req.get('authorization') ?? '');
     if (!token) {
-        return res.status(401).json({ message: 'Token login diperlukan.' });
+        return next(ApiError.unauthorized('Token login diperlukan.'));
     }
 
     if (!config.jwt.secret || config.jwt.secret === 'your_jwt_secret_here') {
-        return res.status(503).json({ message: 'Autentikasi belum dikonfigurasi.' });
+        return next(ApiError.serviceUnavailable('Autentikasi belum dikonfigurasi.'));
     }
 
     let payload;
     try {
         payload = jwt.verify(token[1], config.jwt.secret, { algorithms: ['HS256'] });
     } catch {
-        return res.status(401).json({ message: 'Token login tidak valid atau sudah kedaluwarsa.' });
+        return next(ApiError.unauthorized('Token login tidak valid atau sudah kedaluwarsa.'));
     }
 
     if (!idValid(payload?.sub) || !Number.isFinite(payload.exp)) {
-        return res.status(401).json({ message: 'Identitas pada token login tidak valid.' });
+        return next(ApiError.unauthorized('Identitas pada token login tidak valid.'));
     }
 
     res.locals.idPengguna = payload.sub;
@@ -42,7 +43,7 @@ function otorisasi(...peranDiizinkan) {
 
     return (req, res, next) => {
         if (!peranDiizinkan.includes(res.locals.peran)) {
-            return res.status(403).json({ message: 'Anda tidak memiliki izin untuk mengakses sumber daya ini.' });
+            return next(ApiError.forbidden('Anda tidak memiliki izin untuk mengakses sumber daya ini.'));
         }
         next();
     };
