@@ -1,7 +1,10 @@
-const express = require("express");
-const router = express.Router();
+const express = require("express")
+const router = express.Router()
 
-const catatanBimbingan = require("./catatan-bimbingan");
-router.use("/antrean/:idAntrian/catatan", catatanBimbingan);
+const catatanBimbingan = require("./catatan_bimbingan.routes")
+router.use("/antrean/:idAntrian/catatan", catatanBimbingan)
 
-module.exports = router;
+const autentikasi = require("./autentikasi.routes")
+router.use("/auth", autentikasi)
+
+module.exports = router

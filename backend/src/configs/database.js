@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const config = require('./config');
+const logger = require('../utils/logger');
 
 const pool = new Pool({
     user: config.db.user,
@@ -10,7 +11,7 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-    console.error('Unexpected error on idle client', err);
+    logger.error('Unexpected error on idle database client', err);
     process.exit(-1);
 });
 
@@ -19,9 +20,9 @@ const query = (text, params) => pool.query(text, params);
 const checkConnection = async () => {
     try {
         const res = await pool.query('SELECT NOW()');
-        console.log(`Database Connected: ${res.rows[0].now}`);
+        logger.info(`Database Connected: ${res.rows[0].now}`);
     } catch (err) {
-        console.error(`Database Connection Failed: ${err.message}`);
+        logger.error(`Database Connection Failed: ${err.message}`, err);
         process.exit(1);
     }
 };
