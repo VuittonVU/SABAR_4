@@ -16,7 +16,7 @@ function autentikasi(req, res, next) {
         return next(ApiError.unauthorized('Token login diperlukan.'));
     }
 
-    if (!config.jwt.secret || config.jwt.secret === 'your_jwt_secret_here') {
+    if (!config.jwt.secret) {
         return next(ApiError.serviceUnavailable('Autentikasi belum dikonfigurasi.'));
     }
 
