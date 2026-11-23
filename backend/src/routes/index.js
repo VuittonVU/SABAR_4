@@ -9,5 +9,6 @@ router.use("/auth", autentikasi)
 
 router.use("/jadwal", require("./jadwal.routes"))
 router.use("/notifikasi", require("./notifikasi.routes"))
+router.use("/antrean", require("./antrean.routes"))
 
 module.exports = router

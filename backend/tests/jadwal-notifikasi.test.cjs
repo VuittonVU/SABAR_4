@@ -6,7 +6,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 
-test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () => {
+test('Jadwal, antrean, dan notifikasi melalui API dengan PostgreSQL terisolasi', async () => {
     assert.ok(process.env.TEST_DATABASE_URL, 'Isi TEST_DATABASE_URL dengan database PostgreSQL uji.');
     const schema = 'sabar_test_' + process.pid + '_' + Date.now();
     const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
@@ -30,9 +30,11 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
             INSERT INTO jadwal_bimbingan (id_dosen,tanggal,jam_mulai,jam_selesai,kuota_mhs,status_jadwal)
                 VALUES (1,'2026-12-01','07:00','08:00',3,'Aktif');
         `);
-        const migration = fs.readFileSync(path.join(__dirname, '../migrations/20261122_jadwal_notifikasi.sql'), 'utf8');
-        await pool.query(migration);
-        await pool.query(migration);
+        for (const migrationName of ['20261122_jadwal_notifikasi.sql', '20261123_antrean_status.sql']) {
+            const migration = fs.readFileSync(path.join(__dirname, '../migrations', migrationName), 'utf8');
+            await pool.query(migration);
+            await pool.query(migration);
+        }
         const dbPath = require.resolve('../src/configs/database');
         require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true,
             exports: { pool, query: (sql, params) => pool.query(sql, params) } };
@@ -44,6 +46,7 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
         app.use('/api/jadwal', require('../src/routes/jadwal.routes'));
         app.use('/api/notifikasi', require('../src/routes/notifikasi.routes'));
         app.use('/api/antrean/:idAntrian/catatan', require('../src/routes/catatan_bimbingan.routes'));
+        app.use('/api/antrean', require('../src/routes/antrean.routes'));
         app.use(require('../src/middlewares/error.middleware').errorHandler);
         server = await new Promise((resolve) => {
             const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
@@ -138,6 +141,84 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
         try {
             assert.equal((await fresh.query('SELECT COUNT(*)::int AS jumlah FROM notifikasi WHERE id_pengguna=3 AND status_dibaca=FALSE')).rows[0].jumlah, 0);
         } finally { await fresh.end(); }
+
+        const historyBefore = (await pool.query('SELECT COUNT(*)::int AS jumlah FROM riwayat_status WHERE id_antrian=$1', [antrian])).rows[0].jumlah;
+        const notificationBefore = (await pool.query('SELECT COUNT(*)::int AS jumlah FROM notifikasi WHERE id_pengguna=3')).rows[0].jumlah;
+        assert.equal((await call('PATCH', '/api/antrean/' + antrian + '/status', 'd2', {
+            status_antrian: 'Dipanggil', versi: 1,
+        })).status, 404);
+        const dipanggil = await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Dipanggil', versi: 1, catatan_perubahan: 'Mulai bimbingan',
+        });
+        assert.equal(dipanggil.status, 200);
+        assert.equal(dipanggil.data.versi, 2);
+        assert.equal((await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Menunggu', versi: 2,
+        })).status, 409);
+        assert.equal((await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Selesai', versi: 1,
+        })).status, 409);
+        assert.equal((await pool.query('SELECT COUNT(*)::int AS jumlah FROM riwayat_status WHERE id_antrian=$1', [antrian])).rows[0].jumlah, historyBefore + 1);
+        assert.equal((await pool.query('SELECT COUNT(*)::int AS jumlah FROM notifikasi WHERE id_pengguna=3')).rows[0].jumlah, notificationBefore + 1);
+        const selesai = await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Selesai', versi: 2,
+        });
+        assert.equal(selesai.status, 200);
+        assert.equal(selesai.data.versi, 3);
+        const history = await pool.query(`
+            SELECT status_lama, status_baru, id_user, jadwal_lama, jadwal_baru, catatan_perubahan
+            FROM riwayat_status WHERE id_antrian=$1 ORDER BY id_riwayat
+        `, [antrian]);
+        assert.equal(history.rows.length, 2);
+        assert.deepEqual(history.rows.map((row) => [row.status_lama, row.status_baru]), [
+            ['Menunggu', 'Dipanggil'], ['Dipanggil', 'Selesai'],
+        ]);
+        assert.equal(history.rows[0].id_user, '1');
+        assert.equal(history.rows[0].jadwal_lama.id_jadwal, id);
+        assert.equal(history.rows[0].jadwal_baru.id_jadwal, id);
+        assert.equal(history.rows[0].catatan_perubahan, 'Mulai bimbingan');
+
+        const jadwalBaru = await call('POST', '/api/jadwal', 'd1', {
+            ...data, tanggal: '2026-12-03',
+        });
+        assert.equal(jadwalBaru.status, 201);
+        const antreanMahasiswaDua = (await pool.query(
+            'SELECT id_antrian FROM antrian WHERE id_jadwal=$1 AND id_mahasiswa=4', [id],
+        )).rows[0].id_antrian;
+        assert.equal((await call('PATCH', '/api/antrean/' + antreanMahasiswaDua + '/status', 'd1', {
+            status_antrian: 'Ditunda', versi: 1,
+        })).status, 200);
+        const dijadwalkanUlang = await call('PATCH', '/api/antrean/' + antreanMahasiswaDua + '/status', 'd1', {
+            status_antrian: 'Menunggu', versi: 2, id_jadwal_baru: jadwalBaru.data.id_jadwal,
+        });
+        assert.equal(dijadwalkanUlang.status, 200);
+        assert.equal(dijadwalkanUlang.data.id_jadwal, jadwalBaru.data.id_jadwal);
+        assert.equal(dijadwalkanUlang.data.nomor_antrian, 1);
+        const pindahRiwayat = await pool.query(`
+            SELECT jadwal_lama, jadwal_baru FROM riwayat_status WHERE id_antrian=$1
+            ORDER BY id_riwayat DESC LIMIT 1
+        `, [antreanMahasiswaDua]);
+        assert.equal(pindahRiwayat.rows[0].jadwal_lama.id_jadwal, id);
+        assert.equal(pindahRiwayat.rows[0].jadwal_baru.id_jadwal, jadwalBaru.data.id_jadwal);
+
+        const jadwalAsalUlang = await call('POST', '/api/jadwal', 'd1', {
+            ...data, tanggal: '2026-12-05',
+        });
+        assert.equal(jadwalAsalUlang.status, 201);
+        const antreanUlang = (await pool.query(`
+            INSERT INTO antrian (id_jadwal,id_mahasiswa,nomor_antrian,status_antrian)
+            VALUES ($1,3,1,'Menunggu') RETURNING id_antrian
+        `, [jadwalAsalUlang.data.id_jadwal])).rows[0].id_antrian;
+        const jadwalUlang = await call('POST', '/api/jadwal', 'd1', {
+            ...data, tanggal: '2026-12-04',
+        });
+        assert.equal(jadwalUlang.status, 201);
+        assert.equal((await call('PATCH', '/api/antrean/' + antreanUlang + '/status', 'd1', {
+            status_antrian: 'Ditunda', versi: 1,
+        })).status, 200);
+        assert.equal((await call('PATCH', '/api/antrean/' + antreanUlang + '/status', 'd1', {
+            status_antrian: 'Dijadwalkan Ulang', versi: 2, id_jadwal_baru: jadwalUlang.data.id_jadwal,
+        })).status, 200);
     } finally {
         if (server) await new Promise((resolve) => server.close(resolve));
         if (pool) await pool.end();
