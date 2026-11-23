@@ -1,0 +1,21 @@
+:root {
+  font-family: Inter, Arial, sans-serif;
+  color: #153b36;
+  background: #f4f7f7;
+  font-synthesis: none;
+  line-height: 1.5;
+  --forest: #153b36;
+  --lime: #d8edad;
+  --green: #146b60;
+  --background: #f4f7f7;
+  --border: #d6e3df;
+  --muted: #52645f;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; min-width: 280px; }
+button, input { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+a { color: var(--green); font-weight: 700; text-underline-offset: 3px; }
+a:hover { color: var(--forest); }
+:focus-visible { outline: 3px solid #267e73; outline-offset: 3px; }
