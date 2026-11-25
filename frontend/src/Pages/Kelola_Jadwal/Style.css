@@ -1,0 +1,600 @@
+
+/* =====================================
+   HALAMAN UTAMA
+===================================== */
+
+.halaman-kelola-jadwal {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f4f7f7;
+  box-sizing: border-box;
+}
+
+.konten-kelola-jadwal {
+  flex: 1;
+  min-width: 0;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* =====================================
+   HEADER
+===================================== */
+
+.header-kelola-jadwal {
+  margin-bottom: 28px;
+}
+
+.header-kelola-jadwal h1 {
+  margin: 0 0 10px;
+  font-size: 25px;
+  font-weight: 700;
+  color: #155e56;
+}
+
+.header-kelola-jadwal p {
+  margin: 0;
+  font-size: 13px;
+  color: #718096;
+}
+
+/* =====================================
+   DAFTAR JADWAL
+===================================== */
+
+.daftar-jadwal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.element-jadwal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  width: 100%;
+  padding: 17px 20px;
+  background-color: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.element-jadwal:hover {
+  border-color: #b7dcd5;
+}
+
+.element-jadwal.jadwal-terpilih {
+  border-color: #218579;
+  background-color: #f0f8f6;
+}
+
+.informasi-jadwal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.informasi-jadwal h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #294b47;
+}
+
+.informasi-jadwal p {
+  margin: 0;
+  font-size: 11px;
+  color: #718096;
+}
+
+/* =====================================
+   TOMBOL
+===================================== */
+
+.tombol-buat-jadwal,
+.tombol-ubah-jadwal,
+.tombol-simpan-edit,
+.tombol-kembali-jadwal {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 5px;
+  background-color: #087568;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tombol-buat-jadwal:hover,
+.tombol-ubah-jadwal:hover,
+.tombol-simpan-edit:hover,
+.tombol-kembali-jadwal:hover {
+  background-color: #075d54;
+}
+
+.tombol-buat-jadwal {
+  margin-top: 16px;
+}
+
+.tombol-ubah-jadwal {
+  white-space: nowrap;
+}
+
+/* =====================================
+   FORM EDIT JADWAL
+===================================== */
+
+.form-edit-jadwal {
+  width: 100%;
+  max-width: 700px;
+  padding: 22px;
+  background-color: #ffffff;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+
+.form-edit-jadwal h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: #294b47;
+}
+
+.keterangan-edit {
+  margin: 0 0 22px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #718096;
+}
+
+/* Grup input */
+
+.form-edit-grup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.form-edit-grup label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #718096;
+}
+
+.form-edit-grup input,
+.form-edit-grup select {
+  width: 100%;
+  height: 36px;
+  padding: 8px 11px;
+  border: 1px solid #dce4e5;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #46565c;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-edit-grup input:focus,
+.form-edit-grup select:focus {
+  border-color: #218579;
+}
+
+/* =====================================
+   AKSI FORM
+===================================== */
+
+.aksi-form-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.tombol-batal-edit {
+  width: 80px;
+  padding: 9px 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: #e5f2ef;
+  color: #087568;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tombol-batal-edit:hover {
+  background-color: #d2e9e3;
+}
+
+/* =====================================
+   KONFIRMASI BERHASIL
+===================================== */
+
+.informasi-jadwal-tersimpan {
+  width: 100%;
+  padding: 14px 16px;
+  background-color: #e3f2ee;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.informasi-jadwal-tersimpan p {
+  margin: 0;
+  font-size: 11px;
+  color: #627b76;
+}
+
+.tombol-kembali-jadwal {
+  margin-top: 15px;
+}
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media (max-width: 768px) {
+  .konten-kelola-jadwal {
+    padding: 25px 18px;
+  }
+
+  .element-jadwal {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tombol-ubah-jadwal {
+    width: 100%;
+  }
+
+  .form-edit-jadwal {
+    padding: 18px;
+  }
+}
+
+/* =====================================
+   STYLE SEMUA TOMBOL
+===================================== */
+
+.tombol-buat-jadwal,
+.tombol-ubah-jadwal,
+.tombol-simpan-edit,
+.tombol-kembali-jadwal,
+.tombol-batal-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Tombol utama */
+
+.tombol-buat-jadwal,
+.tombol-ubah-jadwal,
+.tombol-simpan-edit,
+.tombol-kembali-jadwal {
+  background-color: #087568;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(8, 117, 104, 0.12);
+}
+
+.tombol-buat-jadwal:hover,
+.tombol-ubah-jadwal:hover,
+.tombol-simpan-edit:hover,
+.tombol-kembali-jadwal:hover {
+  background-color: #075d54;
+  box-shadow: 0 3px 8px rgba(8, 117, 104, 0.2);
+  transform: translateY(-1px);
+}
+
+.tombol-buat-jadwal:active,
+.tombol-ubah-jadwal:active,
+.tombol-simpan-edit:active,
+.tombol-kembali-jadwal:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Tombol sekunder */
+
+.tombol-batal-edit {
+  background-color: #e8f3f1;
+  color: #087568;
+  border-color: #d5e9e5;
+}
+
+.tombol-batal-edit:hover {
+  background-color: #d8ebe6;
+  border-color: #bddbd4;
+}
+
+/* =====================================
+   STYLE KHUSUS TOMBOL
+===================================== */
+
+.tombol-buat-jadwal {
+  min-width: 120px;
+  margin-top: 18px;
+}
+
+.tombol-ubah-jadwal {
+  min-width: 115px;
+  white-space: nowrap;
+}
+
+.tombol-simpan-edit {
+  min-width: 135px;
+}
+
+.tombol-batal-edit {
+  min-width: 80px;
+}
+
+.tombol-kembali-jadwal {
+  min-width: 135px;
+  margin-top: 16px;
+}
+
+/* =====================================
+   FOCUS KEYBOARD
+===================================== */
+
+.tombol-buat-jadwal:focus-visible,
+.tombol-ubah-jadwal:focus-visible,
+.tombol-simpan-edit:focus-visible,
+.tombol-batal-edit:focus-visible,
+.tombol-kembali-jadwal:focus-visible {
+  outline: 3px solid rgba(8, 117, 104, 0.25);
+  outline-offset: 2px;
+}
+
+/* =====================================
+   FORM EDIT JADWAL
+===================================== */
+
+.form-edit-jadwal {
+  width: 100%;
+  max-width: 700px;
+  padding: 28px;
+  background-color: #ffffff;
+  border: 1px solid #e5ecea;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.035);
+  box-sizing: border-box;
+}
+
+.form-edit-jadwal h2 {
+  margin: 0 0 10px;
+  color: #155e56;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Keterangan form */
+
+.keterangan-edit {
+  margin: 0 0 24px;
+  padding: 11px 13px;
+  background-color: #f0f7f5;
+  border-left: 3px solid #087568;
+  border-radius: 4px;
+  color: #647b76;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =====================================
+   GRUP INPUT
+===================================== */
+
+.form-edit-grup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 19px;
+}
+
+.form-edit-grup label {
+  color: #405b56;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Input dan select */
+
+.form-edit-grup input,
+.form-edit-grup select {
+  width: 100%;
+  height: 40px;
+  padding: 9px 12px;
+  background-color: #ffffff;
+  border: 1px solid #dce6e3;
+  border-radius: 6px;
+  color: #354b46;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+/* Placeholder */
+
+.form-edit-grup input::placeholder {
+  color: #a5b3af;
+}
+
+/* Ketika input dipilih */
+
+.form-edit-grup input:focus,
+.form-edit-grup select:focus {
+  border-color: #087568;
+  box-shadow: 0 0 0 3px rgba(8, 117, 104, 0.09);
+  background-color: #fcfffe;
+}
+
+/* Hover input */
+
+.form-edit-grup input:hover,
+.form-edit-grup select:hover {
+  border-color: #a8c9c1;
+}
+
+/* Input number */
+
+.form-edit-grup input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.form-edit-grup input[type="number"]::-webkit-inner-spin-button,
+.form-edit-grup input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+/* =====================================
+   AKSI FORM
+===================================== */
+
+.aksi-form-edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid #edf1ef;
+}
+
+/* =====================================
+   RESPONSIVE FORM
+===================================== */
+
+@media (max-width: 768px) {
+  .form-edit-jadwal {
+    padding: 22px;
+  }
+
+  .aksi-form-edit {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-edit-jadwal {
+    padding: 18px;
+  }
+
+  .aksi-form-edit {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .aksi-form-edit button {
+    width: 100%;
+  }
+}
+
+/* =====================================
+   KOTAK JADWAL
+===================================== */
+
+.element-jadwal {
+  padding: 19px 22px;
+  border: 1px solid #e7eeeb;
+  border-radius: 8px;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.element-jadwal:hover {
+  border-color: #b5d8cf;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.element-jadwal.jadwal-terpilih {
+  border: 1px solid #087568;
+  background-color: #f4faf8;
+  box-shadow: 0 2px 8px rgba(8, 117, 104, 0.08);
+}
+
+.informasi-jadwal h2 {
+  color: #294b47;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.informasi-jadwal p {
+  color: #81918c;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+
+/* =====================================
+   FORM BUAT JADWAL
+===================================== */
+
+.form-edit-jadwal input[type="date"] {
+  cursor: pointer;
+}
+
+/* Judul form ketika membuat jadwal */
+.form-edit-jadwal:has(input[type="date"]) {
+  animation: formMuncul 0.2s ease;
+}
+
+@keyframes formMuncul {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =====================================
+   JADWAL KOSONG
+===================================== */
+
+.jadwal-kosong {
+  padding: 25px;
+  background-color: #ffffff;
+  border: 1px dashed #cbdad6;
+  border-radius: 7px;
+  color: #81918c;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* =====================================
+   RESPONSIVE FORM
+===================================== */
+
+@media (max-width: 480px) {
+  .form-edit-grup input[type="date"] {
+    min-width: 0;
+  }
+}

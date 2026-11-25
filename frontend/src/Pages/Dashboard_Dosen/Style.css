@@ -1,0 +1,200 @@
+.dashboard-dosen {
+  background-color: #f4f7f7;
+  display: flex;
+  gap: 32px;
+  min-height: 1024px;
+  min-width: 1440px;
+  width: 100%;
+}
+
+.dashboard-dosen .konten-SABAR {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 464px;
+  margin-top: 36px;
+  position: relative;
+  width: 1047px;
+}
+
+.dashboard-dosen .text-wrapper-4 {
+  color: #153b36;
+  font-family: "Inter-Bold", Helvetica;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 52.2px;
+  margin-top: -1px;
+  position: relative;
+  width: 985px;
+}
+
+.dashboard-dosen .p {
+  color: #55635e;
+  font-family: "Inter-Regular", Helvetica;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 26.1px;
+  position: relative;
+  width: 985px;
+}
+
+.dashboard-dosen .sesi-aktif {
+  align-items: flex-start;
+  background-color: #ffffff;
+  border-radius: 12px;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  padding: 20px;
+  position: relative;
+  width: 985px;
+}
+
+.dashboard-dosen .text-wrapper-5 {
+  color: #153b36;
+  font-family: "Inter-Bold", Helvetica;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 31.9px;
+  margin-top: -1px;
+  position: relative;
+  width: 945px;
+}
+
+.dashboard-dosen .element-WIB {
+  color: #55635e;
+  font-family: "Inter-Regular", Helvetica;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 26.1px;
+  position: relative;
+  width: 945px;
+}
+
+.dashboard-dosen .kelola-antrean {
+  align-items: center;
+  background-color: #146b60;
+  border-radius: 9px;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+  width: 240px;
+}
+
+.dashboard-dosen .text-wrapper-6 {
+  color: #ffffff;
+  font-family: "Inter-Bold", Helvetica;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 21.8px;
+  margin-top: -1px;
+  position: relative;
+  text-align: center;
+  width: 212px;
+}
+
+.dashboard-dosen .kelola-jadwal-dan {
+  align-items: center;
+  background-color: #e3f1ed;
+  border-radius: 9px;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+  width: 300px;
+}
+
+.dashboard-dosen .text-wrapper-7 {
+  color: #146b60;
+  font-family: "Inter-Bold", Helvetica;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 21.8px;
+  margin-top: -1px;
+  position: relative;
+  text-align: center;
+  width: 272px;
+}
+
+.dashboard-dosen .riwayat-bimbingan {
+  align-items: center;
+  background-color: #e3f1ed;
+  border-radius: 9px;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+  width: 260px;
+}   
+
+.dashboard-dosen .text-wrapper-8 {
+  color: #146b60;
+  font-family: "Inter-Bold", Helvetica;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 21.8px;
+  margin-top: -1px;
+  position: relative;
+  text-align: center;
+  width: 232px;
+}
+
+
+/* Menghilangkan tampilan default button */
+.dashboard-dosen button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  background-color: transparent;
+  appearance: none;
+}
+
+/* Efek hover pada menu sidebar */
+.dashboard-dosen .div-wrapper:hover {
+  background-color: #f1f6f4;
+}
+
+.dashboard-dosen .div-wrapper:hover .text-wrapper-3 {
+  color: #146b60;
+}
+
+/* Efek hover pada tombol dashboard */
+.dashboard-dosen .kelola-antrean:hover {
+  background-color: #10584f;
+}
+
+.dashboard-dosen .kelola-jadwal-dan:hover,
+.dashboard-dosen .riwayat-bimbingan:hover {
+  background-color: #d3e9e2;
+}
+
+/* Efek ketika tombol ditekan */
+.dashboard-dosen button:active {
+  transform: scale(0.98);
+}
+
+/* Menghilangkan outline default dan tetap
+   memberikan indikator fokus untuk keyboard */
+.dashboard-dosen button:focus-visible {
+  outline: 2px solid #146b60;
+  outline-offset: 3px;
+}
+

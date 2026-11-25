@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import { KelolaJadwal } from './Pages/Kelola_Jadwal/Kelola_Jadwal.jsx';
+import { DashboardDosen } from "./Pages/Dashboard_Dosen/Dashboard_Dosen.jsx";
 
 const forms = {
   '/login': {
@@ -116,6 +118,38 @@ export default function App() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+///===========================================
+ // Halaman Dashboard Dosen
+if (path === "/dashboard-dosen") {
+  return <DashboardDosen onNavigate={go} />;
+}
+
+// Halaman Kelola Jadwal
+if (path === "/kelola-jadwal") {
+  return <KelolaJadwal onNavigate={go} />;
+}
+
+// Halaman yang belum dibuat
+if (path === "/kelola-antrean" || path === "/riwayat") {
+  const namaHalaman =
+    path === "/kelola-antrean"
+      ? "Kelola Antrean"
+      : "Riwayat Bimbingan";
+
+  return (
+    <div style={{ padding: "40px" }}>
+      <h1>{namaHalaman}</h1>
+      <p>Halaman ini belum tersedia.</p>
+
+      <button
+        type="button"
+        onClick={() => go("/dashboard-dosen")}
+      >
+        Kembali ke Dashboard
+      </button>
+    </div>
+  );
+}
 
   const formPath = Object.hasOwn(forms, path) ? path : '/login';
 
