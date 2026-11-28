@@ -1,46 +1,16 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SidebarDosen } from "../../Components/SidebarDosen.jsx";
-import "./style.css";
+import "./Style.css";
 
-export const KelolaJadwal = ({ onNavigate }) => {
-
+export const KelolaJadwal = ({ onNavigate, onLogout, user }) => {
   // =====================================
-  // DATA AWAL JADWAL
+  // STATE DAFTAR JADWAL & LOADING
   // =====================================
 
-  const [daftarJadwal, setDaftarJadwal] = useState([
-    {
-      id: 1,
-      tanggal: "2026-11-05",
-      jamMulai: "10:00",
-      jamSelesai: "12:30",
-      peserta: 10,
-      kuota: 12,
-      durasiRataRata: 15,
-      status: "Aktif",
-    },
-    {
-      id: 2,
-      tanggal: "2026-11-06",
-      jamMulai: "13:00",
-      jamSelesai: "15:00",
-      peserta: 4,
-      kuota: 12,
-      durasiRataRata: 15,
-      status: "Aktif",
-    },
-    {
-      id: 3,
-      tanggal: "2026-11-10",
-      jamMulai: "09:00",
-      jamSelesai: "11:00",
-      peserta: 2,
-      kuota: 8,
-      durasiRataRata: 15,
-      status: "Aktif",
-    },
-  ]);
+  const [daftarJadwal, setDaftarJadwal] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [pesanError, setPesanError] = useState("");
 
   // =====================================
   // STATE HALAMAN
@@ -49,7 +19,6 @@ export const KelolaJadwal = ({ onNavigate }) => {
   // list    = daftar jadwal
   // edit    = form buat/edit jadwal
   // success = konfirmasi berhasil
-
   const [tampilan, setTampilan] = useState("list");
 
   // Jadwal yang sedang dipilih
@@ -59,7 +28,7 @@ export const KelolaJadwal = ({ onNavigate }) => {
   const [jadwalTersimpan, setJadwalTersimpan] = useState(null);
 
   // Menentukan proses buat atau edit
-  const [modeForm, setModeForm] = useState("edit");
+  const [modeForm, setModeForm] = useState("create");
 
   // =====================================
   // STATE FORM
@@ -69,16 +38,73 @@ export const KelolaJadwal = ({ onNavigate }) => {
     tanggal: "",
     jamMulai: "",
     jamSelesai: "",
+    ruang: "",
     kuota: "",
-    durasiRataRata: "",
+    durasiRataRata: "15",
     status: "Aktif",
   });
+
+  const token = localStorage.getItem("token");
+
+  // =====================================
+  // NORMALISASI DATA DARI BACKEND
+  // =====================================
+
+  const normalisasiJadwal = (item) => ({
+    id: item.id_jadwal,
+    id_jadwal: item.id_jadwal,
+    id_dosen: item.id_dosen,
+    tanggal: item.tanggal,
+    jamMulai: (item.jam_mulai || "").slice(0, 5),
+    jamSelesai: (item.jam_selesai || "").slice(0, 5),
+    ruang: item.ruang || "",
+    kuota: item.kuota_mhs,
+    durasiRataRata: item.durasi_menit,
+    status: item.status_jadwal || "Aktif",
+    peserta: item.peserta !== undefined ? Number(item.peserta) : Number(item.total_terdaftar || 0),
+    sisaKuota: item.sisa_kuota !== undefined ? Number(item.sisa_kuota) : Math.max(0, item.kuota_mhs - Number(item.peserta || 0)),
+  });
+
+  // =====================================
+  // MEMUAT DATA JADWAL DARI API
+  // =====================================
+
+  const muatDaftarJadwal = async () => {
+    setLoading(true);
+    setPesanError("");
+    try {
+      const response = await fetch("/api/jadwal", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Gagal memuat daftar jadwal bimbingan.");
+      }
+
+      const listNormal = (result.data || []).map(normalisasiJadwal);
+      setDaftarJadwal(listNormal);
+    } catch (err) {
+      setPesanError(err.message || "Terjadi kesalahan saat menghubungi server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    muatDaftarJadwal();
+  }, []);
 
   // =====================================
   // FORMAT TANGGAL
   // =====================================
 
   const formatTanggal = (tanggal) => {
+    if (!tanggal) return "-";
     const [tahun, bulan, hari] = tanggal.split("-");
 
     const tanggalObj = new Date(
@@ -99,7 +125,11 @@ export const KelolaJadwal = ({ onNavigate }) => {
   // =====================================
 
   const handlePilihJadwal = (jadwal) => {
-    setJadwalTerpilih(jadwal);
+    if (jadwalTerpilih?.id === jadwal.id) {
+      setJadwalTerpilih(null);
+    } else {
+      setJadwalTerpilih(jadwal);
+    }
   };
 
   // =====================================
@@ -110,11 +140,13 @@ export const KelolaJadwal = ({ onNavigate }) => {
     if (!jadwalTerpilih) return;
 
     setModeForm("edit");
+    setPesanError("");
 
     setFormEdit({
       tanggal: jadwalTerpilih.tanggal,
       jamMulai: jadwalTerpilih.jamMulai,
       jamSelesai: jadwalTerpilih.jamSelesai,
+      ruang: jadwalTerpilih.ruang || "",
       kuota: String(jadwalTerpilih.kuota),
       durasiRataRata: String(jadwalTerpilih.durasiRataRata),
       status: jadwalTerpilih.status,
@@ -129,13 +161,14 @@ export const KelolaJadwal = ({ onNavigate }) => {
 
   const handleBuatJadwal = () => {
     setJadwalTerpilih(null);
-
     setModeForm("create");
+    setPesanError("");
 
     setFormEdit({
       tanggal: "",
       jamMulai: "",
       jamSelesai: "",
+      ruang: "",
       kuota: "",
       durasiRataRata: "15",
       status: "Aktif",
@@ -150,7 +183,6 @@ export const KelolaJadwal = ({ onNavigate }) => {
 
   const handleChangeEdit = (e) => {
     const { name, value } = e.target;
-
     setFormEdit((formSebelumnya) => ({
       ...formSebelumnya,
       [name]: value,
@@ -158,11 +190,12 @@ export const KelolaJadwal = ({ onNavigate }) => {
   };
 
   // =====================================
-  // MENYIMPAN JADWAL
+  // MENYIMPAN JADWAL (CREATE / UPDATE VIA API)
   // =====================================
 
-  const handleSimpanEdit = (e) => {
+  const handleSimpanEdit = async (e) => {
     e.preventDefault();
+    setPesanError("");
 
     const kuotaBaru = Number(formEdit.kuota);
     const durasiBaru = Number(formEdit.durasiRataRata);
@@ -176,98 +209,82 @@ export const KelolaJadwal = ({ onNavigate }) => {
       !formEdit.durasiRataRata ||
       !formEdit.status
     ) {
-      alert("Semua kolom harus diisi.");
+      setPesanError("Semua kolom wajib harus diisi.");
       return;
     }
 
     // Validasi waktu
     if (formEdit.jamMulai >= formEdit.jamSelesai) {
-      alert("Jam selesai harus lebih besar dari jam mulai.");
+      setPesanError("Jam selesai harus lebih besar dari jam mulai pada hari yang sama.");
       return;
     }
 
     // Validasi kuota
     if (!Number.isInteger(kuotaBaru) || kuotaBaru <= 0) {
-      alert("Kuota harus berupa bilangan bulat lebih dari 0.");
+      setPesanError("Kuota peserta harus berupa bilangan bulat lebih dari 0.");
       return;
     }
 
     // Validasi durasi
     if (!Number.isInteger(durasiBaru) || durasiBaru <= 0) {
-      alert("Durasi rata-rata harus berupa bilangan bulat lebih dari 0.");
+      setPesanError("Durasi rata-rata sesi harus berupa bilangan bulat lebih dari 0 menit.");
       return;
     }
 
     // Validasi kuota saat edit
-    if (
-      modeForm === "edit" &&
-      kuotaBaru < jadwalTerpilih.peserta
-    ) {
-      alert(
+    if (modeForm === "edit" && kuotaBaru < (jadwalTerpilih?.peserta || 0)) {
+      setPesanError(
         `Kuota tidak boleh lebih kecil dari jumlah peserta yang sudah terdaftar (${jadwalTerpilih.peserta}).`
       );
       return;
     }
 
-    // =====================================
-    // MEMBUAT JADWAL BARU
-    // =====================================
+    const payload = {
+      tanggal: formEdit.tanggal,
+      jam_mulai: formEdit.jamMulai,
+      jam_selesai: formEdit.jamSelesai,
+      ruang: formEdit.ruang.trim() || null,
+      kuota_mhs: kuotaBaru,
+      durasi_menit: durasiBaru,
+      status_jadwal: formEdit.status,
+    };
 
-    if (modeForm === "create") {
+    setSubmitting(true);
 
-      const idBaru =
-        daftarJadwal.length > 0
-          ? Math.max(...daftarJadwal.map((jadwal) => jadwal.id)) + 1
-          : 1;
+    try {
+      const endpoint = modeForm === "create"
+        ? "/api/jadwal"
+        : `/api/jadwal/${jadwalTerpilih.id_jadwal}`;
+      const method = modeForm === "create" ? "POST" : "PATCH";
 
-      const jadwalBaru = {
-        id: idBaru,
-        tanggal: formEdit.tanggal,
-        jamMulai: formEdit.jamMulai,
-        jamSelesai: formEdit.jamSelesai,
-        peserta: 0,
-        kuota: kuotaBaru,
-        durasiRataRata: durasiBaru,
-        status: formEdit.status,
-      };
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-      setDaftarJadwal((jadwalSebelumnya) => [
-        ...jadwalSebelumnya,
-        jadwalBaru,
-      ]);
+      const result = await response.json();
 
-      setJadwalTersimpan(jadwalBaru);
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Gagal menyimpan jadwal bimbingan.");
+      }
+
+      const tersimpanNormal = normalisasiJadwal(result.data);
+      setJadwalTersimpan(tersimpanNormal);
+
+      // Muat ulang daftar jadwal terbaru dari server
+      await muatDaftarJadwal();
+
+      // Menampilkan halaman sukses
+      setTampilan("success");
+    } catch (err) {
+      setPesanError(err.message || "Terjadi kesalahan saat menyimpan jadwal.");
+    } finally {
+      setSubmitting(false);
     }
-
-    // =====================================
-    // MEMPERBARUI JADWAL
-    // =====================================
-
-    else {
-
-      const jadwalBaru = {
-        ...jadwalTerpilih,
-        tanggal: formEdit.tanggal,
-        jamMulai: formEdit.jamMulai,
-        jamSelesai: formEdit.jamSelesai,
-        kuota: kuotaBaru,
-        durasiRataRata: durasiBaru,
-        status: formEdit.status,
-      };
-
-      setDaftarJadwal((jadwalSebelumnya) =>
-        jadwalSebelumnya.map((jadwal) =>
-          jadwal.id === jadwalTerpilih.id
-            ? jadwalBaru
-            : jadwal
-        )
-      );
-
-      setJadwalTersimpan(jadwalBaru);
-    }
-
-    // Menampilkan halaman berhasil
-    setTampilan("success");
   };
 
   // =====================================
@@ -277,6 +294,7 @@ export const KelolaJadwal = ({ onNavigate }) => {
   const handleBatal = () => {
     setTampilan("list");
     setJadwalTerpilih(null);
+    setPesanError("");
   };
 
   // =====================================
@@ -287,25 +305,43 @@ export const KelolaJadwal = ({ onNavigate }) => {
     setTampilan("list");
     setJadwalTerpilih(null);
     setJadwalTersimpan(null);
+    setPesanError("");
   };
 
   // =====================================
-  // MENGHAPUS JADWAL
+  // MENGHAPUS JADWAL (DELETE VIA API)
   // =====================================
 
-  const handleHapusJadwal = (id) => {
+  const handleHapusJadwal = async (idJadwal) => {
     const konfirmasi = window.confirm(
       "Apakah Anda yakin ingin menghapus jadwal ini?"
     );
+    if (!konfirmasi) return;
 
-    if (konfirmasi) {
-      setDaftarJadwal((jadwalSebelumnya) =>
-        jadwalSebelumnya.filter(
-          (jadwal) => jadwal.id !== id
-        )
-      );
+    setSubmitting(true);
+    setPesanError("");
 
+    try {
+      const response = await fetch(`/api/jadwal/${idJadwal}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Gagal menghapus jadwal bimbingan.");
+      }
+
+      setDaftarJadwal((sebelumnya) => sebelumnya.filter((j) => j.id !== idJadwal));
       setJadwalTerpilih(null);
+    } catch (err) {
+      alert(err.message || "Terjadi kesalahan saat menghapus jadwal.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -315,22 +351,18 @@ export const KelolaJadwal = ({ onNavigate }) => {
 
   return (
     <div className="halaman-kelola-jadwal">
-
-      {/* SIDEBAR */}
-
+      {/* SIDEBAR DOSEN */}
       <SidebarDosen
         activePage="jadwal"
         onNavigate={onNavigate}
+        onLogout={onLogout}
       />
 
       {/* KONTEN UTAMA */}
-
       <main className="konten-SABAR">
-
         {/* =====================================
             HEADER
         ===================================== */}
-
         {tampilan !== "success" && (
           <>
             <div className="text-wrapper-3">
@@ -343,29 +375,32 @@ export const KelolaJadwal = ({ onNavigate }) => {
 
             <p className="p">
               {tampilan === "edit"
-                ? "Atur tanggal, waktu, kapasitas, dan durasi rata-rata."
-                : "Atur jadwal aktif, kapasitas, dan durasi rata-rata."}
+                ? "Atur tanggal, waktu, ruangan, kapasitas, dan durasi rata-rata sesi."
+                : "Atur jadwal aktif, ruangan, kapasitas, dan durasi rata-rata sesi bimbingan."}
             </p>
           </>
+        )}
+
+        {/* FEEDBACK ERROR */}
+        {pesanError && (
+          <div className="pesan-error-jadwal" role="alert">
+            {pesanError}
+          </div>
         )}
 
         {/* =====================================
             TAMPILAN DAFTAR JADWAL
         ===================================== */}
-
         {tampilan === "list" && (
           <>
-
-            {daftarJadwal.length > 0 ? (
+            {loading ? (
+              <div className="loading-jadwal">Memuat data jadwal bimbingan...</div>
+            ) : daftarJadwal.length > 0 ? (
               <div className="daftar-jadwal">
-
                 {daftarJadwal.map((jadwal) => (
-
                   <div
                     className={`element-november ${
-                      jadwalTerpilih?.id === jadwal.id
-                        ? "jadwal-terpilih"
-                        : ""
+                      jadwalTerpilih?.id === jadwal.id ? "jadwal-terpilih" : ""
                     }`}
                     key={jadwal.id}
                     onClick={() => handlePilihJadwal(jadwal)}
@@ -378,7 +413,6 @@ export const KelolaJadwal = ({ onNavigate }) => {
                       }
                     }}
                   >
-
                     <div className="text-wrapper-4">
                       {formatTanggal(jadwal.tanggal)}
                     </div>
@@ -394,16 +428,16 @@ export const KelolaJadwal = ({ onNavigate }) => {
 
                     <p className="detail-ruang">
                       Durasi rata-rata: {jadwal.durasiRataRata} menit
+                      {jadwal.ruang ? ` • Ruang: ${jadwal.ruang}` : ""}
                     </p>
 
                     {/* TOMBOL AKSI */}
-
                     {jadwalTerpilih?.id === jadwal.id && (
                       <div className="aksi-jadwal">
-
                         <button
                           type="button"
                           className="tombol-edit"
+                          disabled={submitting}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEdit();
@@ -415,30 +449,26 @@ export const KelolaJadwal = ({ onNavigate }) => {
                         <button
                           type="button"
                           className="tombol-hapus"
+                          disabled={submitting}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleHapusJadwal(jadwal.id);
                           }}
                         >
-                          Hapus
+                          {submitting ? "Memproses..." : "Hapus"}
                         </button>
-
                       </div>
                     )}
-
                   </div>
-
                 ))}
-
               </div>
             ) : (
               <p className="jadwal-kosong">
-                Belum ada jadwal yang tersedia.
+                Belum ada jadwal yang tersedia. Silakan buat jadwal baru.
               </p>
             )}
 
             {/* TOMBOL BUAT JADWAL */}
-
             <button
               type="button"
               className="buat-jadwal"
@@ -446,21 +476,14 @@ export const KelolaJadwal = ({ onNavigate }) => {
             >
               Buat Jadwal
             </button>
-
           </>
         )}
 
         {/* =====================================
             FORM BUAT / EDIT JADWAL
         ===================================== */}
-
         {tampilan === "edit" && (
-
-          <form
-            className="form-edit-jadwal"
-            onSubmit={handleSimpanEdit}
-          >
-
+          <form className="form-edit-jadwal" onSubmit={handleSimpanEdit}>
             <h2>
               {modeForm === "create"
                 ? "Buat Jadwal Baru"
@@ -468,139 +491,123 @@ export const KelolaJadwal = ({ onNavigate }) => {
             </h2>
 
             {/* TANGGAL */}
-
             <div className="form-edit-grup">
-
-              <label htmlFor="tanggal-jadwal">
-                Tanggal
-              </label>
-
+              <label htmlFor="tanggal-jadwal">Tanggal</label>
               <input
                 id="tanggal-jadwal"
                 type="date"
                 name="tanggal"
+                required
+                disabled={submitting}
                 value={formEdit.tanggal}
                 onChange={handleChangeEdit}
               />
-
             </div>
 
             {/* JAM MULAI DAN JAM SELESAI */}
-
             <div className="form-edit-baris">
-
               <div className="form-edit-grup">
-
-                <label htmlFor="jam-mulai-jadwal">
-                  Jam Mulai
-                </label>
-
+                <label htmlFor="jam-mulai-jadwal">Jam Mulai</label>
                 <input
                   id="jam-mulai-jadwal"
                   type="time"
                   name="jamMulai"
+                  required
+                  disabled={submitting}
                   value={formEdit.jamMulai}
                   onChange={handleChangeEdit}
                 />
-
               </div>
 
               <div className="form-edit-grup">
-
-                <label htmlFor="jam-selesai-jadwal">
-                  Jam Selesai
-                </label>
-
+                <label htmlFor="jam-selesai-jadwal">Jam Selesai</label>
                 <input
                   id="jam-selesai-jadwal"
                   type="time"
                   name="jamSelesai"
+                  required
+                  disabled={submitting}
                   value={formEdit.jamSelesai}
                   onChange={handleChangeEdit}
                 />
-
               </div>
+            </div>
 
+            {/* RUANG (OPSIONAL) */}
+            <div className="form-edit-grup">
+              <label htmlFor="ruang-jadwal">Ruangan (Opsional)</label>
+              <input
+                id="ruang-jadwal"
+                type="text"
+                name="ruang"
+                placeholder="Contoh: R. Dosen 204 atau Lab A"
+                maxLength={100}
+                disabled={submitting}
+                value={formEdit.ruang}
+                onChange={handleChangeEdit}
+              />
             </div>
 
             {/* KUOTA */}
-
             <div className="form-edit-grup">
-
-              <label htmlFor="kuota-jadwal">
-                Kuota Peserta
-              </label>
-
+              <label htmlFor="kuota-jadwal">Kuota Peserta</label>
               <input
                 id="kuota-jadwal"
                 type="number"
                 name="kuota"
-                min={
-                  modeForm === "edit"
-                    ? jadwalTerpilih?.peserta
-                    : 1
-                }
+                required
+                min={modeForm === "edit" ? (jadwalTerpilih?.peserta || 1) : 1}
+                disabled={submitting}
                 value={formEdit.kuota}
                 onChange={handleChangeEdit}
               />
-
               {modeForm === "edit" && (
                 <small>
-                  Peserta yang sudah terdaftar:{" "}
-                  {jadwalTerpilih?.peserta}
+                  Peserta yang sudah terdaftar: {jadwalTerpilih?.peserta || 0} orang
                 </small>
               )}
-
             </div>
 
             {/* DURASI RATA-RATA */}
-
             <div className="form-edit-grup">
-
-              <label htmlFor="durasi-jadwal">
-                Durasi Rata-rata (Menit)
-              </label>
-
+              <label htmlFor="durasi-jadwal">Durasi Rata-rata (Menit)</label>
               <input
                 id="durasi-jadwal"
                 type="number"
                 name="durasiRataRata"
+                required
                 min="1"
+                disabled={submitting}
                 value={formEdit.durasiRataRata}
                 onChange={handleChangeEdit}
               />
-
             </div>
 
             {/* STATUS JADWAL */}
-
             <div className="form-edit-grup">
-
-              <label htmlFor="status-jadwal">
-                Status Jadwal
-              </label>
-
+              <label htmlFor="status-jadwal">Status Jadwal</label>
               <select
                 id="status-jadwal"
                 name="status"
+                disabled={submitting}
                 value={formEdit.status}
                 onChange={handleChangeEdit}
               >
                 <option value="Aktif">Aktif</option>
                 <option value="Nonaktif">Nonaktif</option>
               </select>
-
             </div>
 
             {/* TOMBOL FORM */}
-
             <div className="aksi-form-edit">
-
               <button
                 type="submit"
                 className="tombol-simpan-edit"
+                disabled={submitting}
               >
-                {modeForm === "create"
+                {submitting
+                  ? "Menyimpan..."
+                  : modeForm === "create"
                   ? "Simpan Jadwal"
                   : "Simpan Perubahan"}
               </button>
@@ -608,25 +615,20 @@ export const KelolaJadwal = ({ onNavigate }) => {
               <button
                 type="button"
                 className="tombol-batal-edit"
+                disabled={submitting}
                 onClick={handleBatal}
               >
                 Batal
               </button>
-
             </div>
-
           </form>
-
         )}
 
         {/* =====================================
             KONFIRMASI BERHASIL
         ===================================== */}
-
         {tampilan === "success" && jadwalTersimpan && (
-
           <div className="jadwal-berhasil">
-
             <h2>
               {modeForm === "create"
                 ? "Jadwal berhasil dibuat"
@@ -636,7 +638,6 @@ export const KelolaJadwal = ({ onNavigate }) => {
             <p>
               Status: {jadwalTersimpan.status}
               <br />
-
               {formatTanggal(jadwalTersimpan.tanggal)}
               {" • "}
               {jadwalTersimpan.jamMulai.replace(":", ".")}–
@@ -645,6 +646,7 @@ export const KelolaJadwal = ({ onNavigate }) => {
               {jadwalTersimpan.kuota} Kuota
               {" • "}
               {jadwalTersimpan.durasiRataRata} menit
+              {jadwalTersimpan.ruang ? ` • Ruang: ${jadwalTersimpan.ruang}` : ""}
             </p>
 
             <button
@@ -654,11 +656,8 @@ export const KelolaJadwal = ({ onNavigate }) => {
             >
               Kembali ke Jadwal
             </button>
-
           </div>
-
         )}
-
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 
-import "./style.css";
+import "./Style.css";
 import { SidebarDosen } from "../../Components/SidebarDosen.jsx";
 
 export const DashboardDosen = ({ onNavigate, onLogout }) => {

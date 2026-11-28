@@ -1,7 +1,7 @@
 
 import { useRef, useState } from "react";
 import { SidebarDosen } from "../../Components/SidebarDosen.jsx";
-import "./style.css";
+import "./Style.css";
 
 export const Riwayat = ({ onNavigate }) => {
 

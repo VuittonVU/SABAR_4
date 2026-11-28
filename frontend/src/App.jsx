@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { KelolaJadwal } from './pages/Kelola_Jadwal/Kelola_Jadwal.jsx';
-import { DashboardDosen } from './pages/Dashboard_Dosen/Dashboard_Dosen.jsx';
-import { KelolaAntrean } from './pages/Kelola_Antrean/Kelola_Antrean.jsx';
-import { Riwayat } from './pages/Riwayat/Riwayat.jsx';
-import { DashboardMahasiswa } from './pages/DashboardMahasiswa.jsx';
-import { AmbilAntrean } from './pages/AmbilAntrean.jsx';
-import { DashboardAdmin } from './pages/DashboardAdmin.jsx';
+import { KelolaJadwal } from './Pages/Kelola_Jadwal/Kelola_Jadwal.jsx';
+import { DashboardDosen } from './Pages/Dashboard_Dosen/Dashboard_Dosen.jsx';
+import { KelolaAntrean } from './Pages/Kelola_Antrean/Kelola_Antrean.jsx';
+import { Riwayat } from './Pages/Riwayat/Riwayat.jsx';
+import { DashboardMahasiswa } from './Pages/DashboardMahasiswa.jsx';
+import { AmbilAntrean } from './Pages/AmbilAntrean.jsx';
+import { DashboardAdmin } from './Pages/DashboardAdmin.jsx';
 
 const forms = {
   '/login': {
