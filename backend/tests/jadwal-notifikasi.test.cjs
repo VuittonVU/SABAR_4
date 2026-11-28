@@ -6,7 +6,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 
-test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () => {
+test('Jadwal, antrean, dan notifikasi melalui API dengan PostgreSQL terisolasi', async () => {
     assert.ok(process.env.TEST_DATABASE_URL, 'Isi TEST_DATABASE_URL dengan database PostgreSQL uji.');
     const schema = 'sabar_test_' + process.pid + '_' + Date.now();
     const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
@@ -21,18 +21,25 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
         // Fixture adalah Query Database.txt yang disediakan tim.
         await pool.query(fs.readFileSync(path.join(__dirname, 'fixtures/sabar.sql'), 'utf8'));
         await pool.query(`
-            INSERT INTO data_referensi (tipe,nama) VALUES ('role','Dosen'),('role','Mahasiswa');
+            INSERT INTO data_referensi (tipe,nama) VALUES ('role','Dosen'),('role','Mahasiswa'),('role','Admin');
             INSERT INTO pengguna (id_role,username,kata_sandi_hash,nama,email_npm) VALUES
                 (1,'dosen1','unused','Dosen 1','dosen1@example.test'),
                 (1,'dosen2','unused','Dosen 2','dosen2@example.test'),
                 (2,'mhs1','unused','Mahasiswa 1','mhs1@example.test'),
-                (2,'mhs2','unused','Mahasiswa 2','mhs2@example.test');
+                (2,'mhs2','unused','Mahasiswa 2','mhs2@example.test'),
+                (3,'admin1','unused','Admin 1','admin1@example.test');
             INSERT INTO jadwal_bimbingan (id_dosen,tanggal,jam_mulai,jam_selesai,kuota_mhs,status_jadwal)
                 VALUES (1,'2026-12-01','07:00','08:00',3,'Aktif');
         `);
-        const migration = fs.readFileSync(path.join(__dirname, '../migrations/20261122_jadwal_notifikasi.sql'), 'utf8');
-        await pool.query(migration);
-        await pool.query(migration);
+        for (const migrationName of [
+            '20261122_jadwal_notifikasi.sql',
+            '20261123_antrean_status.sql',
+            '20261128_admin_audit.sql',
+        ]) {
+            const migration = fs.readFileSync(path.join(__dirname, '../migrations', migrationName), 'utf8');
+            await pool.query(migration);
+            await pool.query(migration);
+        }
         const dbPath = require.resolve('../src/configs/database');
         require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true,
             exports: { pool, query: (sql, params) => pool.query(sql, params) } };
@@ -44,6 +51,9 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
         app.use('/api/jadwal', require('../src/routes/jadwal.routes'));
         app.use('/api/notifikasi', require('../src/routes/notifikasi.routes'));
         app.use('/api/antrean/:idAntrian/catatan', require('../src/routes/catatan_bimbingan.routes'));
+        app.use('/api/antrean', require('../src/routes/antrean.routes'));
+        app.use('/api/admin-audit', require('../src/routes/admin_audit.routes'));
+        app.use('/api/berkas-revisi', require('../src/routes/berkas_revisi.routes'));
         app.use(require('../src/middlewares/error.middleware').errorHandler);
         server = await new Promise((resolve) => {
             const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
@@ -54,6 +64,7 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
             d2: jwt.sign({ sub: '2', role: 'Dosen' }, config.jwt.secret, { expiresIn: '1h' }),
             m1: jwt.sign({ sub: '3', role: 'Mahasiswa' }, config.jwt.secret, { expiresIn: '1h' }),
             m2: jwt.sign({ sub: '4', role: 'Mahasiswa' }, config.jwt.secret, { expiresIn: '1h' }),
+            admin: jwt.sign({ sub: '5', role: 'Admin' }, config.jwt.secret, { expiresIn: '1h' }),
         };
         async function call(method, url, token, body) {
             const response = await fetch(base + url, {
@@ -138,6 +149,171 @@ test('Jadwal dan notifikasi melalui API dengan PostgreSQL terisolasi', async () 
         try {
             assert.equal((await fresh.query('SELECT COUNT(*)::int AS jumlah FROM notifikasi WHERE id_pengguna=3 AND status_dibaca=FALSE')).rows[0].jumlah, 0);
         } finally { await fresh.end(); }
+
+        const historyBefore = (await pool.query('SELECT COUNT(*)::int AS jumlah FROM riwayat_status WHERE id_antrian=$1', [antrian])).rows[0].jumlah;
+        const notificationBefore = (await pool.query('SELECT COUNT(*)::int AS jumlah FROM notifikasi WHERE id_pengguna=3')).rows[0].jumlah;
+        assert.equal((await call('PATCH', '/api/antrean/' + antrian + '/status', 'd2', {
+            status_antrian: 'Dipanggil', versi: 1,
+        })).status, 404);
+        const dipanggil = await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Dipanggil', versi: 1, catatan_perubahan: 'Mulai bimbingan',
+        });
+        assert.equal(dipanggil.status, 200);
+        assert.equal(dipanggil.data.versi, 2);
+        assert.equal((await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Menunggu', versi: 2,
+        })).status, 409);
+        assert.equal((await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Selesai', versi: 1,
+        })).status, 409);
+        assert.equal((await pool.query('SELECT COUNT(*)::int AS jumlah FROM riwayat_status WHERE id_antrian=$1', [antrian])).rows[0].jumlah, historyBefore + 1);
+        assert.equal((await pool.query('SELECT COUNT(*)::int AS jumlah FROM notifikasi WHERE id_pengguna=3')).rows[0].jumlah, notificationBefore + 1);
+        const selesai = await call('PATCH', '/api/antrean/' + antrian + '/status', 'd1', {
+            status_antrian: 'Selesai', versi: 2,
+        });
+        assert.equal(selesai.status, 200);
+        assert.equal(selesai.data.versi, 3);
+        const history = await pool.query(`
+            SELECT status_lama, status_baru, id_user, jadwal_lama, jadwal_baru, catatan_perubahan
+            FROM riwayat_status WHERE id_antrian=$1 ORDER BY id_riwayat
+        `, [antrian]);
+        assert.equal(history.rows.length, 2);
+        assert.deepEqual(history.rows.map((row) => [row.status_lama, row.status_baru]), [
+            ['Menunggu', 'Dipanggil'], ['Dipanggil', 'Selesai'],
+        ]);
+        assert.equal(history.rows[0].id_user, '1');
+        assert.equal(history.rows[0].jadwal_lama.id_jadwal, id);
+        assert.equal(history.rows[0].jadwal_baru.id_jadwal, id);
+        assert.equal(history.rows[0].catatan_perubahan, 'Mulai bimbingan');
+
+        const jadwalBaru = await call('POST', '/api/jadwal', 'd1', {
+            ...data, tanggal: '2026-12-03',
+        });
+        assert.equal(jadwalBaru.status, 201);
+        const antreanMahasiswaDua = (await pool.query(
+            'SELECT id_antrian FROM antrian WHERE id_jadwal=$1 AND id_mahasiswa=4', [id],
+        )).rows[0].id_antrian;
+        assert.equal((await call('PATCH', '/api/antrean/' + antreanMahasiswaDua + '/status', 'd1', {
+            status_antrian: 'Ditunda', versi: 1,
+        })).status, 200);
+        const dijadwalkanUlang = await call('PATCH', '/api/antrean/' + antreanMahasiswaDua + '/status', 'd1', {
+            status_antrian: 'Menunggu', versi: 2, id_jadwal_baru: jadwalBaru.data.id_jadwal,
+        });
+        assert.equal(dijadwalkanUlang.status, 200);
+        assert.equal(dijadwalkanUlang.data.id_jadwal, jadwalBaru.data.id_jadwal);
+        assert.equal(dijadwalkanUlang.data.nomor_antrian, 1);
+        const pindahRiwayat = await pool.query(`
+            SELECT jadwal_lama, jadwal_baru FROM riwayat_status WHERE id_antrian=$1
+            ORDER BY id_riwayat DESC LIMIT 1
+        `, [antreanMahasiswaDua]);
+        assert.equal(pindahRiwayat.rows[0].jadwal_lama.id_jadwal, id);
+        assert.equal(pindahRiwayat.rows[0].jadwal_baru.id_jadwal, jadwalBaru.data.id_jadwal);
+
+        const jadwalAsalUlang = await call('POST', '/api/jadwal', 'd1', {
+            ...data, tanggal: '2026-12-05',
+        });
+        assert.equal(jadwalAsalUlang.status, 201);
+        const antreanUlang = (await pool.query(`
+            INSERT INTO antrian (id_jadwal,id_mahasiswa,nomor_antrian,status_antrian)
+            VALUES ($1,3,1,'Menunggu') RETURNING id_antrian
+        `, [jadwalAsalUlang.data.id_jadwal])).rows[0].id_antrian;
+        const jadwalUlang = await call('POST', '/api/jadwal', 'd1', {
+            ...data, tanggal: '2026-12-04',
+        });
+        assert.equal(jadwalUlang.status, 201);
+        assert.equal((await call('PATCH', '/api/antrean/' + antreanUlang + '/status', 'd1', {
+            status_antrian: 'Ditunda', versi: 1,
+        })).status, 200);
+        assert.equal((await call('PATCH', '/api/antrean/' + antreanUlang + '/status', 'd1', {
+            status_antrian: 'Dijadwalkan Ulang', versi: 2, id_jadwal_baru: jadwalUlang.data.id_jadwal,
+        })).status, 200);
+
+        assert.equal((await call('GET', '/api/admin-audit/pengguna', 'm1')).status, 403);
+        const users = await call('GET', '/api/admin-audit/pengguna', 'admin');
+        assert.equal(users.status, 200);
+        assert.ok(users.data.every((user) => !Object.hasOwn(user, 'kata_sandi_hash')));
+        const createdUser = await call('POST', '/api/admin-audit/pengguna', 'admin', {
+            id_role: 2,
+            username: 'admin-created',
+            password: 'KataSandiAman123!',
+            nama: 'Pengguna Baru',
+            email_npm: 'baru@example.test',
+        });
+        assert.equal(createdUser.status, 201);
+        assert.equal(createdUser.data.status_aktif, true);
+        assert.ok(!Object.hasOwn(createdUser.data, 'kata_sandi_hash'));
+        const createdUserId = createdUser.data.id_pengguna;
+        const createdUserToken = jwt.sign(
+            { sub: String(createdUserId), role: 'Mahasiswa' },
+            config.jwt.secret,
+            { expiresIn: '1h' },
+        );
+        const updatedUser = await call('PATCH', '/api/admin-audit/pengguna/' + createdUserId, 'admin', {
+            nama: 'Nama Diperbarui',
+            password: 'KataSandiBaru123!',
+        });
+        assert.equal(updatedUser.status, 200);
+        assert.equal(updatedUser.data.nama, 'Nama Diperbarui');
+        const storedPassword = (await pool.query(
+            'SELECT kata_sandi_hash FROM pengguna WHERE id_pengguna=$1',
+            [createdUserId],
+        )).rows[0].kata_sandi_hash;
+        assert.notEqual(storedPassword, 'KataSandiBaru123!');
+        assert.equal(await require('bcryptjs').compare('KataSandiBaru123!', storedPassword), true);
+
+        assert.equal((await call(
+            'PATCH',
+            '/api/admin-audit/pengguna/' + createdUserId + '/nonaktifkan',
+            'admin',
+        )).status, 200);
+        assert.equal((await call('GET', '/api/berkas-revisi/88', null)).status, 401);
+        const inactiveTokenResponse = await fetch(base + '/api/berkas-revisi/88', {
+            headers: { Authorization: 'Bearer ' + createdUserToken },
+        });
+        assert.equal(inactiveTokenResponse.status, 401);
+        assert.equal((await call(
+            'PATCH',
+            '/api/admin-audit/pengguna/' + createdUserId + '/aktifkan',
+            'admin',
+        )).status, 200);
+
+        assert.equal((await call('GET', '/api/berkas-revisi/88', 'admin')).status, 403);
+        assert.equal((await call('GET', '/api/berkas-revisi/88/download', 'admin')).status, 403);
+        const deniedAccess = await pool.query(`
+            SELECT aksi, nama_tabel, id_data, ip_address, status
+            FROM audit_log
+            WHERE id_user=5 AND nama_tabel='berkas_revisi'
+            ORDER BY id_log DESC LIMIT 2
+        `);
+        assert.equal(deniedAccess.rows.length, 2);
+        assert.ok(deniedAccess.rows.every((row) =>
+            row.aksi === 'AKSES_DITOLAK'
+            && row.id_data === '88'
+            && row.ip_address
+            && row.status === 'ditolak'));
+
+        const reference = await call('POST', '/api/admin-audit/referensi', 'admin', {
+            tipe: 'uji',
+            nama: 'Referensi Uji',
+            nilai: 'A',
+            detail_info: 'Tidak sensitif',
+        });
+        assert.equal(reference.status, 201);
+        const referenceId = reference.data.id_referensi;
+        assert.equal((await call('PATCH', '/api/admin-audit/referensi/' + referenceId, 'admin', {
+            nama: 'Referensi Diperbarui',
+        })).data.nama, 'Referensi Diperbarui');
+        assert.equal((await call('DELETE', '/api/admin-audit/referensi/' + referenceId, 'admin')).status, 200);
+
+        const audited = await pool.query(`
+            SELECT aksi, nama_tabel, id_data, waktu, ip_address, status
+            FROM audit_log
+            WHERE id_user=5 AND nama_tabel IN ('pengguna', 'data_referensi')
+        `);
+        assert.ok(audited.rows.length >= 8);
+        assert.ok(audited.rows.every((row) =>
+            row.aksi && row.nama_tabel && row.waktu && row.ip_address && row.status === 'berhasil'));
+        assert.ok(!JSON.stringify(audited.rows).includes('KataSandi'));
     } finally {
         if (server) await new Promise((resolve) => server.close(resolve));
         if (pool) await pool.end();

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../configs/config');
+const { query } = require('../configs/database');
 const ApiError = require('../utils/apiError');
 
 const PERAN = Object.freeze(['Mahasiswa', 'Dosen', 'Admin']);
@@ -10,13 +11,13 @@ function idValid(value) {
         && BigInt(value) <= 9223372036854775807n;
 }
 
-function autentikasi(req, res, next) {
+async function autentikasi(req, res, next) {
     const token = /^Bearer ([^\s]+)$/i.exec(req.get('authorization') ?? '');
     if (!token) {
         return next(ApiError.unauthorized('Token login diperlukan.'));
     }
 
-    if (!config.jwt.secret || config.jwt.secret === 'your_jwt_secret_here') {
+    if (!config.jwt.secret) {
         return next(ApiError.serviceUnavailable('Autentikasi belum dikonfigurasi.'));
     }
 
@@ -31,9 +32,24 @@ function autentikasi(req, res, next) {
         return next(ApiError.unauthorized('Identitas pada token login tidak valid.'));
     }
 
-    res.locals.idPengguna = payload.sub;
-    res.locals.peran = payload.role ?? payload.peran;
-    next();
+    try {
+        const { rows } = await query(`
+            SELECT p.id_pengguna::text AS id_pengguna, p.status_aktif, r.nama AS role
+            FROM pengguna p
+            JOIN data_referensi r ON r.id_referensi = p.id_role
+            WHERE p.id_pengguna = $1 AND r.tipe = 'role';
+        `, [payload.sub]);
+        const user = rows[0];
+        if (!user || !user.status_aktif) {
+            return next(ApiError.unauthorized('Akun tidak aktif atau tidak tersedia.'));
+        }
+
+        res.locals.idPengguna = user.id_pengguna;
+        res.locals.peran = user.role;
+        next();
+    } catch (err) {
+        next(err);
+    }
 }
 
 function otorisasi(...peranDiizinkan) {

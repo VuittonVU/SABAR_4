@@ -14,7 +14,7 @@ node backend/scripts/migrate-jadwal-notifikasi.cjs
 npm run dev --prefix backend
 ```
 
-Migrasi dijalankan satu kali sebelum endpoint jadwal dipakai, dan aman diulang. Migrasi menambah durasi_menit serta indeks. Jadwal lama tetap disimpan dengan durasi NULL. Saat mengubah jadwal lama tersebut, sertakan durasi_menit yang benar. Skrip mengandalkan tabel dasar dari skema tim yang sudah terpasang.
+Migrasi dijalankan sebelum endpoint dipakai dan aman diulang. Migrasi menambah durasi_menit serta indeks, versi antrean, dan kolom snapshot jadwal pada riwayat status. Jadwal lama tetap disimpan dengan durasi NULL. Saat mengubah jadwal lama tersebut, sertakan durasi_menit yang benar. Skrip mengandalkan tabel dasar dari skema tim yang sudah terpasang.
 
 ## Jadwal dosen
 
@@ -48,6 +48,28 @@ Dosen lain mendapat 404 untuk detail, edit, atau hapus. Mahasiswa dan Admin mend
 
 Mutasi satu dosen diserialisasi dengan kunci baris pengguna. Pemeriksaan jumlah peserta mengunci jadwal. Pengembang pengambilan antrean Card 2.2 perlu mengunci baris jadwal yang sama sebelum memeriksa kuota dan memasukkan antrean agar perubahan kuota dan pendaftaran serentak tetap konsisten.
 
+## Status antrean dosen
+
+| Metode | Path | Respons |
+| --- | --- | --- |
+| GET | /api/antrean/:idAntrian | 200, detail antrean milik dosen login |
+| PATCH | /api/antrean/:idAntrian/status | 200, status dan versi terbaru |
+
+Perubahan status hanya dapat dilakukan oleh Dosen pemilik jadwal antrean. Body harus berisi `status_antrian` dan `versi` dari data terakhir yang dibaca. Catatan dan ID jadwal baru bersifat opsional sesuai transisi:
+
+```json
+{
+  "status_antrian": "Menunggu",
+  "versi": 2,
+  "id_jadwal_baru": "15",
+  "catatan_perubahan": "Dipindahkan ke jadwal berikutnya"
+}
+```
+
+Transisi yang diizinkan adalah `Menunggu` ke `Dipanggil` atau `Ditunda`, `Dipanggil` ke `Selesai` atau `Ditunda`, lalu `Ditunda` ke `Dijadwalkan Ulang` atau `Menunggu`. Dua transisi terakhir memerlukan ID jadwal baru yang aktif, milik dosen yang sama, berbeda dari jadwal lama, dan masih memiliki kuota. Antrean dipindahkan ke jadwal itu serta mendapat nomor antrean berikutnya. Transisi ilegal, konflik versi lama, atau jadwal penuh menghasilkan 409; request tidak meninggalkan riwayat maupun notifikasi parsial.
+
+Setiap mutasi menaikkan `versi` antrean. Baris `riwayat_status` mencatat status lama/baru, ID pelaku, waktu perubahan, catatan bebas, dan snapshot JSON jadwal lama/baru. Pembaruan antrean, riwayat, dan notifikasi mahasiswa dilakukan dalam transaksi yang sama. Gunakan ulang versi terbaru dari respons untuk perubahan berikutnya.
+
 ## Notifikasi
 
 | Metode | Path | Respons |
@@ -80,7 +102,7 @@ Pemicu yang sudah dipasang adalah perubahan jadwal serta tambah/edit catatan yan
 
 ## Pengujian
 
-Telah dijalankan menggunakan PostgreSQL 18.7 lokal terisolasi, fixture dari Query Database.txt tim, migrasi, Express, dan JWT uji. Pemeriksaan mencakup CRUD, pemilik jadwal, input salah, benturan pada request bersamaan, migrasi berulang, jadwal lama, kuota peserta, notifikasi milik sendiri, penanda berulang dan semua dibaca, persistensi lewat koneksi baru, regresi catatan, serta rollback ketika INSERT notifikasi sengaja dibuat gagal.
+Tes integrasi mencakup CRUD jadwal, transisi status antrean dan versi konflik, penolakan transisi ilegal tanpa riwayat/notifikasi parsial, perpindahan jadwal, migrasi berulang, kepemilikan data, notifikasi, regresi catatan, dan rollback saat pencatatan notifikasi gagal. Jalankan pada PostgreSQL uji dengan perintah berikut:
 
 Untuk menjalankan tes pada PostgreSQL uji milik sendiri:
 
