@@ -177,6 +177,23 @@ export function AmbilAntrean({ user, onNavigate, onLogout }) {
           >
             Berkas &amp; Catatan Revisi
           </button>
+          <button
+            type="button"
+            onClick={() => onNavigate && onNavigate('/notifikasi')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'transparent',
+              color: '#d1e0d3',
+              border: 'none',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontSize: '15px'
+            }}
+          >
+            Pusat Notifikasi
+          </button>
         </nav>
 
         <button

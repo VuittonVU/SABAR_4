@@ -7,6 +7,7 @@ import { Riwayat } from './Pages/Riwayat/Riwayat.jsx';
 import { DashboardMahasiswa } from './Pages/DashboardMahasiswa.jsx';
 import { AmbilAntrean } from './Pages/AmbilAntrean.jsx';
 import { BerkasRevisi } from './Pages/BerkasRevisi.jsx';
+import { Notifikasi } from './Pages/Notifikasi.jsx';
 import { DashboardAdmin } from './Pages/DashboardAdmin.jsx';
 
 const forms = {
@@ -268,6 +269,11 @@ export default function App() {
   // Halaman Berkas Revisi & Catatan Bimbingan Mahasiswa
   if (path === "/berkas-revisi") {
     return <BerkasRevisi onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Pusat Notifikasi In-App
+  if (path === "/notifikasi") {
+    return <Notifikasi onNavigate={go} onLogout={handleLogout} user={currentUser} />;
   }
 
   // Halaman Dashboard Admin
