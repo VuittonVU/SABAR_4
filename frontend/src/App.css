@@ -1,16 +1,66 @@
-.auth-shell { display: grid; grid-template-columns: 5fr 7fr; min-height: 100vh; }
+.auth-shell {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  min-height: 100vh;
+}
 
-.brand { background: var(--forest); color: white; padding: 64px clamp(32px, 4.45vw, 72px); }
-.brand-name { color: var(--lime); font-size: 56px; font-weight: 800; line-height: 1.3; }
-.brand p { margin: 14px 0 0; font-size: 22px; font-weight: 700; line-height: 1.35; }
+.brand {
+  background: var(--forest);
+  color: white;
+  padding: 64px clamp(32px, 4.45vw, 72px);
+}
 
-.content { padding: clamp(72px, 20.5vh, 216px) clamp(28px, 8.33vw, 135px) 64px; }
-.auth-panel { width: min(100%, 500px); }
-.auth-panel h1 { margin: 0 0 12px; font-size: 38px; line-height: 1.18; letter-spacing: -.025em; overflow-wrap: anywhere; }
-.description { color: var(--muted); margin: 0 0 16px; font-size: 16px; }
-form { display: grid; gap: 9px; }
-.field { display: grid; gap: 6px; }
-.field label { font-size: 15px; font-weight: 700; }
+.brand-name {
+  color: var(--lime);
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.brand p {
+  margin: 14px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.content {
+  padding: clamp(72px, 20.5vh, 216px) clamp(28px, 8.33vw, 135px) 64px;
+}
+
+.auth-panel {
+  width: min(100%, 500px);
+}
+
+.auth-panel h1 {
+  margin: 0 0 12px;
+  font-size: 38px;
+  line-height: 1.18;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  color: var(--muted);
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+form {
+  display: grid;
+  gap: 9px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .field input {
   width: 100%;
   min-height: 49px;
@@ -20,8 +70,17 @@ form { display: grid; gap: 9px; }
   color: var(--forest);
   padding: 10px 13px;
 }
-.field input::placeholder { color: var(--muted); opacity: 1; }
-.form-link { text-align: right; font-size: 14px; }
+
+.field input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.form-link {
+  text-align: right;
+  font-size: 14px;
+}
+
 .primary {
   display: grid;
   place-items: center;
@@ -36,18 +95,612 @@ form { display: grid; gap: 9px; }
   text-decoration: none;
   cursor: pointer;
 }
-.primary { color: white; background: var(--green); }
-.primary:hover { color: white; background: var(--forest); }
-.alternate { text-align: center; margin: 17px 0 0; color: var(--muted); font-size: 14px; }
-.feedback { background: #e4f2ee; color: var(--forest); border-radius: 8px; padding: 10px 13px; font-size: 14px; }
-.feedback.error { background: #fbeceb; color: #742c25; }
+
+.primary {
+  color: white;
+  background: var(--green);
+}
+
+.primary:hover {
+  color: white;
+  background: var(--forest);
+}
+
+.alternate {
+  text-align: center;
+  margin: 17px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.feedback {
+  background: #e4f2ee;
+  color: var(--forest);
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: 14px;
+}
+
+.feedback.error {
+  background: #fbeceb;
+  color: #742c25;
+}
 
 @media (max-width: 820px) {
-  .auth-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .brand { padding: 25px 24px 28px; }
-  .brand-name { font-size: 39px; }
-  .brand p { margin-top: 6px; font-size: 16px; }
-  .content { padding: 38px 24px 48px; }
-  .auth-panel { margin-inline: auto; }
-  .auth-panel h1 { font-size: 31px; }
+  .auth-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .brand {
+    padding: 25px 24px 28px;
+  }
+
+  .brand-name {
+    font-size: 39px;
+  }
+
+  .brand p {
+    margin-top: 6px;
+    font-size: 16px;
+  }
+
+  .content {
+    padding: 38px 24px 48px;
+  }
+
+  .auth-panel {
+    margin-inline: auto;
+  }
+
+  .auth-panel h1 {
+    font-size: 31px;
+  }
+}
+
+/* ==========================================================================
+   Dashboard & Ambil Antrean Mahasiswa
+   ========================================================================== */
+
+.dashboard-layout {
+  min-height: 100vh;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-header {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 16px clamp(20px, 4vw, 48px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  background: var(--forest);
+  color: var(--lime);
+  font-weight: 800;
+  font-size: 18px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  letter-spacing: .05em;
+}
+
+.header-subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--forest);
+}
+
+.user-meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dashboard-content {
+  max-width: 1024px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 36px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.content-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.content-hero h1 {
+  margin: 0 0 6px;
+  font-size: 30px;
+  color: var(--forest);
+  font-weight: 800;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-compact {
+  width: auto;
+  min-height: 42px;
+  margin-top: 0;
+  padding: 8px 18px;
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 14px;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  background: white;
+  color: var(--forest);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f0f5f4;
+  border-color: #b7ccc6;
+}
+
+.btn-secondary:disabled {
+  background: #eef2f1;
+  color: #8fa19c;
+  cursor: not-allowed;
+}
+
+.btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  background: white;
+  color: #b42318;
+  border: 1px solid #fda29b;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background: #fef3f2;
+  border-color: #f04438;
+}
+
+/* Kartu Antrean Aktif */
+.active-queue-card {
+  background: white;
+  border: 2px solid #b2d5cc;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 8px 24px rgba(21, 59, 54, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.queue-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+}
+
+.queue-number-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.queue-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+
+.queue-number {
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--green);
+  line-height: 1;
+}
+
+.queue-status-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.status-pill {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-pill.menunggu {
+  background: #fff8e6;
+  color: #b54708;
+  border: 1px solid #fedf89;
+}
+
+.status-pill.dilayani {
+  background: #ecfdf3;
+  color: #027a48;
+  border: 1px solid #a6f4c5;
+}
+
+.register-time {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.queue-grid-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-title {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--forest);
+}
+
+/* Banner Estimasi & Posisi */
+.estimation-banner {
+  background: #f1f8f6;
+  border: 1px solid #c7e3dc;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.estimation-banner h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--forest);
+  font-weight: 800;
+}
+
+.estimation-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.metric-box {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-box.highlight {
+  background: #e7f5f1;
+  border-color: #8dc5b8;
+}
+
+.metric-number {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.estimation-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.queue-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+/* Alert Penolakan & Sukses */
+.alert-penolakan {
+  background: #fffbfa;
+  border: 1.5px solid #fda29b;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(180, 35, 24, 0.08);
+}
+
+.alert-sukses {
+  background: #f6fef9;
+  border: 1.5px solid #6ce9a6;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(18, 183, 106, 0.08);
+}
+
+.alert-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.alert-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-title {
+  font-weight: 800;
+  font-size: 16px;
+  color: #b42318;
+}
+
+.alert-sukses .alert-title {
+  color: #027a48;
+}
+
+.alert-message {
+  margin: 0;
+  font-size: 14px;
+  color: #4e5d59;
+  font-weight: 500;
+}
+
+.alert-sub {
+  font-size: 12px;
+  color: #71827e;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.alert-close {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Daftar Jadwal Grid */
+.jadwal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.jadwal-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.jadwal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.jadwal-card.disabled-card {
+  opacity: 0.75;
+  background: #fafbfb;
+}
+
+.jadwal-card.registered-card {
+  border-color: #8dc5b8;
+  background: #f7faf9;
+}
+
+.jadwal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.jadwal-dosen-title {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.jadwal-dosen-name {
+  margin: 3px 0 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--forest);
+}
+
+.quota-pill {
+  background: #e8f5f1;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.disabled-card .quota-pill {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.jadwal-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #384a46;
+}
+
+.detail-icon {
+  font-size: 15px;
+}
+
+.detail-text {
+  font-weight: 500;
+}
+
+.jadwal-card-footer {
+  margin-top: auto;
+}
+
+/* Empty State Card */
+.empty-state-card {
+  background: white;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 56px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.empty-state-card h2 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--forest);
+}
+
+.empty-state-card .description {
+  max-width: 480px;
+}
+
+.loading-state {
+  background: white;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #d6e3df;
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

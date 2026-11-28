@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { KelolaJadwal } from './Pages/Kelola_Jadwal/Kelola_Jadwal.jsx';
-import { DashboardDosen } from "./Pages/Dashboard_Dosen/Dashboard_Dosen.jsx";
-import { KelolaAntrean } from "./Pages/Kelola_Antrean/Kelola_Antrean.jsx";
-import { Riwayat } from "./Pages/Riwayat/Riwayat.jsx";
+import { KelolaJadwal } from './pages/Kelola_Jadwal/Kelola_Jadwal.jsx';
+import { DashboardDosen } from './pages/Dashboard_Dosen/Dashboard_Dosen.jsx';
+import { KelolaAntrean } from './pages/Kelola_Antrean/Kelola_Antrean.jsx';
+import { Riwayat } from './pages/Riwayat/Riwayat.jsx';
+import { DashboardMahasiswa } from './pages/DashboardMahasiswa.jsx';
+import { AmbilAntrean } from './pages/AmbilAntrean.jsx';
+import { DashboardAdmin } from './pages/DashboardAdmin.jsx';
 
 const forms = {
   '/login': {
@@ -57,29 +60,75 @@ function RouteLink({ to, go, children }) {
   }}>{children}</a>;
 }
 
-function AuthForm({ path, go }) {
+function AuthForm({ path, go, onLoginSuccess }) {
   const config = forms[path];
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
     setError('');
     setNotice('');
 
-    if (path === '/login' && !data.identifier.trim()) {
-      setError('Masukkan NIM atau email.');
+    if (path === '/login') {
+      const identifier = data.identifier?.trim();
+      const password = data.password;
+
+      if (!identifier) {
+        setError('Masukkan NIM atau email.');
+        return;
+      }
+      if (!password) {
+        setError('Masukkan kata sandi.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            nim: identifier,
+            username: identifier,
+            password: password,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Login gagal. Periksa kembali NIM/email dan kata sandi Anda.');
+        }
+
+        if (onLoginSuccess) {
+          onLoginSuccess(result.data);
+        }
+      } catch (err) {
+        setError(err.message || 'Terjadi kesalahan saat menghubungi server.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
-    if (path === '/registrasi' && !data.name.trim()) {
-      setError('Masukkan nama lengkap.');
+
+    if (path === '/registrasi') {
+      if (!data.name?.trim()) {
+        setError('Masukkan nama lengkap.');
+        return;
+      }
+      if (data.confirmation !== undefined && data.password !== data.confirmation) {
+        setError('Kedua kata sandi harus sama.');
+        return;
+      }
+      setNotice('Pendaftaran akun mahasiswa akan segera diproses.');
       return;
     }
-    if (data.confirmation !== undefined && data.password !== data.confirmation) {
-      setError('Kedua kata sandi harus sama.');
-      return;
-    }
+
     setNotice('Form sudah diperiksa. Pengiriman belum tersedia.');
   }
 
@@ -91,12 +140,14 @@ function AuthForm({ path, go }) {
     <form onSubmit={submit}>
       {config.fields.map(({ label, name, type = 'text', ...props }) => <div className="field" key={name}>
         <label htmlFor={name}>{label}</label>
-        <input id={name} name={name} type={type} required {...props} />
+        <input id={name} name={name} type={type} required disabled={loading} {...props} />
       </div>)}
       {path === '/login' && <div className="form-link">
         <RouteLink to="/lupa-kata-sandi" go={go}>Lupa kata sandi?</RouteLink>
       </div>}
-      <button className="primary" type="submit">{config.submit}</button>
+      <button className="primary" type="submit" disabled={loading}>
+        {loading ? 'Memproses...' : config.submit}
+      </button>
     </form>
     <p className="alternate">
       {path === '/login' ? <>Belum punya akun mahasiswa? <RouteLink to="/registrasi" go={go}>Daftar</RouteLink></>
@@ -108,6 +159,14 @@ function AuthForm({ path, go }) {
 
 export default function App() {
   const [path, setPath] = useState(getRoute);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
   function go(nextPath) {
     window.history.pushState(null, '', nextPath);
@@ -115,45 +174,100 @@ export default function App() {
     window.scrollTo(0, 0);
   }
 
+  async function handleLogout() {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setCurrentUser(null);
+      go('/login');
+    }
+  }
+
+  function handleLoginSuccess(authData) {
+    localStorage.setItem('token', authData.token);
+    localStorage.setItem('user', JSON.stringify(authData.user));
+    setCurrentUser(authData.user);
+
+    // Pengalihan dashboard sesuai peran pengguna
+    const role = (authData.user?.role || '').toLowerCase();
+    if (role === 'dosen') {
+      go('/dashboard-dosen');
+    } else if (role === 'admin') {
+      go('/dashboard-admin');
+    } else if (role === 'mahasiswa') {
+      go('/dashboard-mahasiswa');
+    } else {
+      go('/dashboard-mahasiswa');
+    }
+  }
+
   useEffect(() => {
     const onPop = () => setPath(getRoute());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
-///===========================================
- // Halaman Dashboard Dosen
-if (path === "/dashboard-dosen") {
-  return <DashboardDosen onNavigate={go} />;
-}
 
-// Halaman Kelola Jadwal
-if (path === "/kelola-jadwal") {
-  return <KelolaJadwal onNavigate={go} />;
-}
-if (path === "/kelola-antrean") {
-  return <KelolaAntrean onNavigate={go} />;
-}
-if (path === "/riwayat") {
-  return <Riwayat onNavigate={go} />;
-}
-// Halaman yang belum dibuat
-// if (path === "/riwayat") {
-//   const namaHalaman =
-//     "Riwayat";  
-//   return (
-//     <div style={{ padding: "40px" }}>
-//       <h1>{namaHalaman}</h1>
-//       <p>Halaman ini belum tersedia.</p>
+  // Jika sudah login dan mengakses root atau login, arahkan ke dashboard yang sesuai
+  useEffect(() => {
+    if ((path === '/' || path === '/login') && currentUser) {
+      const role = (currentUser.role || '').toLowerCase();
+      if (role === 'dosen') {
+        go('/dashboard-dosen');
+      } else if (role === 'admin') {
+        go('/dashboard-admin');
+      } else if (role === 'mahasiswa') {
+        go('/dashboard-mahasiswa');
+      }
+    }
+  }, [path, currentUser]);
 
-//       <button
-//         type="button"
-//         onClick={() => go("/dashboard-dosen")}
-//       >
-//         Kembali ke Dashboard
-//       </button>
-//     </div>
-//   );
-// }
+  // Halaman Dashboard Dosen
+  if (path === "/dashboard-dosen") {
+    return <DashboardDosen onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Kelola Jadwal
+  if (path === "/kelola-jadwal") {
+    return <KelolaJadwal onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Kelola Antrean
+  if (path === "/kelola-antrean") {
+    return <KelolaAntrean onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Riwayat
+  if (path === "/riwayat") {
+    return <Riwayat onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Dashboard Mahasiswa
+  if (path === "/dashboard-mahasiswa") {
+    return <DashboardMahasiswa onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Ambil Nomor Antrean Mahasiswa
+  if (path === "/ambil-antrean") {
+    return <AmbilAntrean onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
+
+  // Halaman Dashboard Admin
+  if (path === "/dashboard-admin") {
+    return <DashboardAdmin onNavigate={go} onLogout={handleLogout} user={currentUser} />;
+  }
 
   const formPath = Object.hasOwn(forms, path) ? path : '/login';
 
@@ -164,7 +278,7 @@ if (path === "/riwayat") {
     </aside>
     <main className="content">
       <div className="auth-panel">
-        <AuthForm key={formPath} path={formPath} go={go} />
+        <AuthForm key={formPath} path={formPath} go={go} onLoginSuccess={handleLoginSuccess} />
       </div>
     </main>
   </div>;
