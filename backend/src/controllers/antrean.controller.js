@@ -85,10 +85,31 @@ async function batalAntrean(req, res, next) {
     }
 }
 
+async function daftarDosen(req, res, next) {
+    try {
+        const idJadwal = req.query?.id_jadwal || null;
+        const data = await antreanService.daftarAntreanDosen(res.locals.idPengguna, idJadwal);
+        return sendSuccess(res, 'Daftar antrean berhasil diambil.', data);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function riwayatMahasiswa(req, res, next) {
+    try {
+        const data = await antreanService.riwayatAntreanMahasiswa(res.locals.idPengguna);
+        return sendSuccess(res, 'Riwayat antrean bimbingan berhasil diambil.', data);
+    } catch (err) {
+        next(err);
+    }
+}
+
 module.exports = {
     validasiId,
     validasiPerubahan,
     detail,
+    daftarDosen,
+    riwayatMahasiswa,
     ubahStatus,
     ambilNomorAntrean,
     antreanAktif,

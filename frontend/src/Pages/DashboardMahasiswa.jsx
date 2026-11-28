@@ -133,7 +133,7 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
           </button>
           <button
             type="button"
-            onClick={() => alert('Fitur Riwayat Bimbingan segera hadir!')}
+            onClick={() => onNavigate && onNavigate('/berkas-revisi')}
             style={{
               textAlign: 'left',
               padding: '12px 16px',
@@ -146,7 +146,7 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
               fontSize: '15px'
             }}
           >
-            Riwayat Bimbingan
+            Berkas &amp; Catatan Revisi
           </button>
         </nav>
 
@@ -293,6 +293,23 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
                     {batalLoading ? 'Membatalkan...' : 'Batalkan Antrean'}
                   </button>
                 )}
+                <button
+                  type="button"
+                  style={{
+                    width: 'auto',
+                    minWidth: '160px',
+                    backgroundColor: '#e5f2ef',
+                    color: '#087568',
+                    border: '1px solid #cce8de',
+                    borderRadius: '6px',
+                    padding: '10px 16px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onNavigate && onNavigate('/berkas-revisi')}
+                >
+                  📖 Catatan Revisi Dosen
+                </button>
                 <button
                   type="button"
                   className="primary"

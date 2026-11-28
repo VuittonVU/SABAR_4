@@ -1,71 +1,16 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SidebarDosen } from "../../Components/SidebarDosen.jsx";
 import "./Style.css";
 
-export const KelolaAntrean = ({ onNavigate }) => {
-
+export const KelolaAntrean = ({ onNavigate, onLogout, user }) => {
   // =====================================
-  // DATA AWAL ANTREAN
+  // STATE DATA ANTREAN & LOADING
   // =====================================
 
-  const [daftarAntrean, setDaftarAntrean] = useState([
-    {
-      id: 1,
-      nomor: "A-04",
-      nama: "Bintang Khalid",
-      status: "Selesai",
-      berkas: 1,
-      tanggal: "2026-11-05",
-      jamMulai: "09:00",
-      jamSelesai: "09:30",
-      catatan: "",
-    },
-    {
-      id: 2,
-      nomor: "A-05",
-      nama: "Rafi Fauzan",
-      status: "Dipanggil",
-      berkas: 2,
-      tanggal: "2026-11-05",
-      jamMulai: "09:30",
-      jamSelesai: "10:00",
-      catatan: "",
-    },
-    {
-      id: 3,
-      nomor: "A-06",
-      nama: "Jorio Ebenezer",
-      status: "Menunggu",
-      berkas: 1,
-      tanggal: "2026-11-05",
-      jamMulai: "10:00",
-      jamSelesai: "10:30",
-      catatan: "",
-    },
-    {
-      id: 4,
-      nomor: "A-07",
-      nama: "Vuitton Varian Utomo",
-      status: "Menunggu",
-      berkas: 2,
-      tanggal: "2026-11-05",
-      jamMulai: "10:30",
-      jamSelesai: "11:00",
-      catatan: "",
-    },
-    {
-      id: 5,
-      nomor: "A-08",
-      nama: "Anantha Aulia",
-      status: "Ditunda",
-      berkas: 1,
-      tanggal: "2026-11-05",
-      jamMulai: "11:00",
-      jamSelesai: "11:30",
-      catatan: "",
-    },
-  ]);
+  const [daftarAntrean, setDaftarAntrean] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [pesanError, setPesanError] = useState("");
 
   // =====================================
   // STATE TAMPILAN
@@ -81,19 +26,20 @@ export const KelolaAntrean = ({ onNavigate }) => {
 
   // Form catatan
   const [catatanEdit, setCatatanEdit] = useState("");
+  const [idCatatanAktif, setIdCatatanAktif] = useState(null);
 
-  // Form jadwal ulang
-  const [formJadwal, setFormJadwal] = useState({
-    tanggal: "",
-    jamMulai: "",
-    jamSelesai: "",
-  });
+  // Daftar jadwal aktif dosen untuk opsi penjadwalan ulang
+  const [jadwalTersedia, setJadwalTersedia] = useState([]);
+  const [idJadwalBaru, setIdJadwalBaru] = useState("");
+
+  const token = localStorage.getItem("token");
 
   // =====================================
   // FORMAT TANGGAL DAN WAKTU
   // =====================================
 
   const formatTanggal = (tanggal) => {
+    if (!tanggal) return "-";
     const [tahun, bulan, hari] = tanggal.split("-");
 
     return new Date(
@@ -109,80 +55,199 @@ export const KelolaAntrean = ({ onNavigate }) => {
   };
 
   const formatWaktu = (mulai, selesai) => {
-    return `${mulai.replace(":", ".")}–${selesai.replace(":", ".")} WIB`;
+    if (!mulai || !selesai) return "-";
+    return `${mulai.slice(0, 5).replace(":", ".")}–${selesai.slice(0, 5).replace(":", ".")} WIB`;
   };
 
   // =====================================
-  // MEMILIH ANTREAN
+  // NORMALISASI DATA DARI BACKEND
   // =====================================
 
-  const handlePilihAntrean = (antrean) => {
-    setAntreanTerpilih(
-      antreanTerpilih?.id === antrean.id
-        ? null
-        : antrean
-    );
+  const normalisasiItem = (item) => ({
+    id: item.id_antrian,
+    id_antrian: item.id_antrian,
+    id_jadwal: item.id_jadwal,
+    nomor: `#${item.nomor_antrian}`,
+    nomor_antrian: item.nomor_antrian,
+    nama: item.nama_mahasiswa || "Mahasiswa",
+    email_npm: item.email_npm || "-",
+    status: item.status_antrian,
+    status_antrian: item.status_antrian,
+    versi: item.versi || 1,
+    berkas: 1,
+    tanggal: item.tanggal,
+    jamMulai: (item.jam_mulai || "").slice(0, 5),
+    jamSelesai: (item.jam_selesai || "").slice(0, 5),
+    ruang: item.ruang || "",
+    catatan: item.catatan || "",
+    id_catatan: item.id_catatan || null,
+    catatan_updated_at: item.catatan_updated_at || null,
+  });
 
-    setCatatanEdit(antrean.catatan);
+  // =====================================
+  // MEMUAT DATA ANTREAN DARI API
+  // =====================================
+
+  const muatDataAntrean = async () => {
+    setLoading(true);
+    setPesanError("");
+    try {
+      const response = await fetch("/api/antrean", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success && Array.isArray(result.data)) {
+        const dataList = result.data.map(normalisasiItem);
+        setDaftarAntrean(dataList);
+      } else {
+        // Fallback jika belum ada antrean di database
+        setDaftarAntrean([]);
+      }
+    } catch (err) {
+      setPesanError(err.message || "Gagal memuat data antrean mahasiswa.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Memuat daftar jadwal aktif dosen untuk keperluan reschedule
+  const muatJadwalDosen = async () => {
+    try {
+      const res = await fetch("/api/jadwal", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setJadwalTersedia(json.data.filter((j) => j.status_jadwal === "Aktif"));
+      }
+    } catch {
+      // Abaikan jika gagal memuat jadwal
+    }
+  };
+
+  useEffect(() => {
+    muatDataAntrean();
+    muatJadwalDosen();
+  }, []);
+
+  // =====================================
+  // MEMILIH ANTREAN & MEMUAT CATATAN RIIL
+  // =====================================
+
+  const handlePilihAntrean = async (antrean) => {
+    if (antreanTerpilih?.id === antrean.id) {
+      setAntreanTerpilih(null);
+      setCatatanEdit("");
+      setIdCatatanAktif(null);
+      return;
+    }
+
+    setAntreanTerpilih(antrean);
+    setCatatanEdit(antrean.catatan || "");
+    setIdCatatanAktif(antrean.id_catatan || null);
+
+    // Ambil riwayat catatan bimbingan terbaru untuk antrean ini dari API
+    try {
+      const res = await fetch(`/api/antrean/${antrean.id_antrian}/catatan`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const json = await res.json();
+      if (res.ok && json.success && Array.isArray(json.data) && json.data.length > 0) {
+        const catatanTerbaru = json.data[0];
+        setCatatanEdit(catatanTerbaru.isi_catatan || "");
+        setIdCatatanAktif(catatanTerbaru.id_catatan);
+      }
+    } catch {
+      // Pertahankan catatan lokal dari antrean jika request gagal
+    }
   };
 
   // =====================================
-  // MEMPERBARUI DATA ANTREAN
+  // PERUBAHAN STATUS ANTREAN VIA API
   // =====================================
 
-  const perbaruiAntrean = (id, perubahan) => {
-
-    setDaftarAntrean((dataSebelumnya) =>
-      dataSebelumnya.map((antrean) =>
-        antrean.id === id
-          ? { ...antrean, ...perubahan }
-          : antrean
-      )
-    );
-
-    setAntreanTerpilih((antreanSebelumnya) =>
-      antreanSebelumnya?.id === id
-        ? { ...antreanSebelumnya, ...perubahan }
-        : antreanSebelumnya
-    );
-  };
-
-  // =====================================
-  // PERUBAHAN STATUS ANTREAN
-  // =====================================
-
-  // Memanggil mahasiswa
-  const handlePanggil = () => {
+  const handleUbahStatus = async (statusBaru, idJadwalBaruVal = null) => {
     if (!antreanTerpilih) return;
 
-    perbaruiAntrean(antreanTerpilih.id, {
-      status: "Dipanggil",
-    });
+    setSubmitting(true);
+    setPesanError("");
+
+    try {
+      const payload = {
+        status_antrian: statusBaru,
+        versi: antreanTerpilih.versi,
+      };
+
+      if (idJadwalBaruVal) {
+        payload.id_jadwal_baru = String(idJadwalBaruVal);
+      }
+
+      const res = await fetch(`/api/antrean/${antreanTerpilih.id_antrian}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Gagal memperbarui status antrean.");
+      }
+
+      // Update state lokal
+      const versiBaru = json.data?.versi || antreanTerpilih.versi + 1;
+      const dataTerupdate = {
+        ...antreanTerpilih,
+        status: statusBaru,
+        status_antrian: statusBaru,
+        versi: versiBaru,
+        ...(json.data?.tanggal ? { tanggal: json.data.tanggal } : {}),
+        ...(json.data?.jam_mulai ? { jamMulai: json.data.jam_mulai.slice(0, 5) } : {}),
+        ...(json.data?.jam_selesai ? { jamSelesai: json.data.jam_selesai.slice(0, 5) } : {}),
+      };
+
+      setDaftarAntrean((prev) =>
+        prev.map((a) => (a.id === antreanTerpilih.id ? dataTerupdate : a))
+      );
+      setAntreanTerpilih(dataTerupdate);
+
+      if (statusBaru === "Menunggu" && idJadwalBaruVal) {
+        setDataSukses({
+          jenis: "jadwal",
+          antrean: dataTerupdate,
+        });
+        setTampilan("reschedule-success");
+      }
+    } catch (err) {
+      alert(err.message || "Terjadi kesalahan saat memperbarui status.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Menyelesaikan sesi bimbingan
-  const handleSelesai = () => {
-    if (!antreanTerpilih) return;
-
-    perbaruiAntrean(antreanTerpilih.id, {
-      status: "Selesai",
-    });
-  };
-
-  // Menunda antrean
-  const handleTunda = () => {
-    if (!antreanTerpilih) return;
-
-    perbaruiAntrean(antreanTerpilih.id, {
-      status: "Ditunda",
-    });
-  };
+  const handlePanggil = () => handleUbahStatus("Dipanggil");
+  const handleSelesai = () => handleUbahStatus("Selesai");
+  const handleTunda = () => handleUbahStatus("Ditunda");
 
   // =====================================
-  // MENYIMPAN CATATAN
+  // MENYIMPAN CATATAN BIMBINGAN VIA API
   // =====================================
 
-  const handleSimpanCatatan = () => {
+  const handleSimpanCatatan = async () => {
     if (!antreanTerpilih) return;
 
     if (!catatanEdit.trim()) {
@@ -190,21 +255,56 @@ export const KelolaAntrean = ({ onNavigate }) => {
       return;
     }
 
-    const antreanBaru = {
-      ...antreanTerpilih,
-      catatan: catatanEdit.trim(),
-    };
+    setSubmitting(true);
+    setPesanError("");
 
-    perbaruiAntrean(antreanTerpilih.id, {
-      catatan: catatanEdit.trim(),
-    });
+    try {
+      const isEdit = Boolean(idCatatanAktif);
+      const url = isEdit
+        ? `/api/antrean/${antreanTerpilih.id_antrian}/catatan/${idCatatanAktif}`
+        : `/api/antrean/${antreanTerpilih.id_antrian}/catatan`;
+      const method = isEdit ? "PATCH" : "POST";
 
-    setDataSukses({
-      jenis: "catatan",
-      antrean: antreanBaru,
-    });
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isi_catatan: catatanEdit.trim() }),
+      });
 
-    setTampilan("note-success");
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Gagal menyimpan catatan bimbingan.");
+      }
+
+      const catatanTersimpan = json.data;
+      setIdCatatanAktif(catatanTersimpan.id_catatan);
+
+      const antreanBaru = {
+        ...antreanTerpilih,
+        catatan: catatanEdit.trim(),
+        id_catatan: catatanTersimpan.id_catatan,
+      };
+
+      setDaftarAntrean((prev) =>
+        prev.map((a) => (a.id === antreanTerpilih.id ? antreanBaru : a))
+      );
+      setAntreanTerpilih(antreanBaru);
+
+      setDataSukses({
+        jenis: "catatan",
+        antrean: antreanBaru,
+      });
+
+      setTampilan("note-success");
+    } catch (err) {
+      alert(err.message || "Terjadi kesalahan saat menyimpan catatan bimbingan.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // =====================================
@@ -213,68 +313,28 @@ export const KelolaAntrean = ({ onNavigate }) => {
 
   const handleBukaJadwalUlang = () => {
     if (!antreanTerpilih) return;
-
-    setFormJadwal({
-      tanggal: "",
-      jamMulai: "",
-      jamSelesai: "",
-    });
-
+    setIdJadwalBaru("");
     setTampilan("reschedule");
-  };
-
-  // Mengubah input jadwal ulang
-  const handleChangeJadwal = (e) => {
-    const { name, value } = e.target;
-
-    setFormJadwal((formSebelumnya) => ({
-      ...formSebelumnya,
-      [name]: value,
-    }));
   };
 
   // =====================================
   // MENYIMPAN JADWAL ULANG
   // =====================================
 
-  const handleSimpanJadwalUlang = (e) => {
+  const handleSimpanJadwalUlang = async (e) => {
     e.preventDefault();
 
-    if (
-      !formJadwal.tanggal ||
-      !formJadwal.jamMulai ||
-      !formJadwal.jamSelesai
-    ) {
-      alert("Semua kolom harus diisi.");
+    if (!idJadwalBaru) {
+      alert("Silakan pilih jadwal baru untuk menjadwalkan ulang antrean ini.");
       return;
     }
 
-    if (formJadwal.jamMulai >= formJadwal.jamSelesai) {
-      alert("Jam selesai harus lebih besar dari jam mulai.");
+    if (String(idJadwalBaru) === String(antreanTerpilih.id_jadwal)) {
+      alert("Jadwal baru harus berbeda dari jadwal sebelumnya.");
       return;
     }
 
-    const antreanBaru = {
-      ...antreanTerpilih,
-      tanggal: formJadwal.tanggal,
-      jamMulai: formJadwal.jamMulai,
-      jamSelesai: formJadwal.jamSelesai,
-      status: "Menunggu",
-    };
-
-    perbaruiAntrean(antreanTerpilih.id, {
-      tanggal: formJadwal.tanggal,
-      jamMulai: formJadwal.jamMulai,
-      jamSelesai: formJadwal.jamSelesai,
-      status: "Menunggu",
-    });
-
-    setDataSukses({
-      jenis: "jadwal",
-      antrean: antreanBaru,
-    });
-
-    setTampilan("reschedule-success");
+    await handleUbahStatus("Menunggu", idJadwalBaru);
   };
 
   // =====================================
@@ -286,6 +346,7 @@ export const KelolaAntrean = ({ onNavigate }) => {
     setAntreanTerpilih(null);
     setDataSukses(null);
     setCatatanEdit("");
+    setIdCatatanAktif(null);
   };
 
   // =====================================
@@ -294,111 +355,125 @@ export const KelolaAntrean = ({ onNavigate }) => {
 
   return (
     <div className="halaman-kelola-antrean">
-
       <SidebarDosen
         activePage="antrean"
         onNavigate={onNavigate}
+        onLogout={onLogout}
       />
 
       <main className="konten-kelola-antrean">
-
         {/* =================================
             TAMPILAN 1: DAFTAR ANTREAN
         ================================= */}
-
         {tampilan === "list" && (
           <>
             <div className="header-kelola-antrean">
               <h1>Kelola Antrean dan Catatan</h1>
-
               <p>
-                {formatTanggal("2026-11-05")}
-                {" • "}
-                Tampilkan {daftarAntrean.length} antrean dari total{" "}
-                {daftarAntrean.length} peserta.
+                Kelola pemanggilan antrean sesi bimbingan dan berikan arahan revisi kepada mahasiswa.
               </p>
             </div>
 
-            {/* Ringkasan status */}
+            {/* Ringkasan alur status */}
             <div className="ringkasan-antrean">
-              Menunggu → Dipanggil → Selesai.
-              Tunda hanya untuk antrean Menunggu/Dipanggil.
-              Jadwalkan ulang hanya dari antrean Ditunda.
+              Alur status: Menunggu → Dipanggil → Selesai.
+              Penundaan hanya dapat dilakukan saat antrean Menunggu/Dipanggil.
+              Jadwalkan ulang hanya dapat dilakukan saat antrean Ditunda.
             </div>
+
+            {pesanError && (
+              <div style={{
+                padding: "12px 16px",
+                marginBottom: "16px",
+                backgroundColor: "#fdf2f2",
+                border: "1px solid #f8b4b4",
+                borderRadius: "6px",
+                color: "#9b1c1c",
+                fontSize: "13px"
+              }}>
+                {pesanError}
+              </div>
+            )}
 
             {/* Tabel antrean */}
             <section className="tabel-antrean">
-
               <div className="baris-antrean header-tabel-antrean">
                 <span>Nomor / Mahasiswa</span>
                 <span>Status</span>
-                <span>Berkas</span>
+                <span>Waktu &amp; Sesi</span>
               </div>
 
-              {daftarAntrean.map((antrean) => (
-                <div
-                  key={antrean.id}
-                  className={`baris-antrean ${
-                    antreanTerpilih?.id === antrean.id
-                      ? "antrean-terpilih"
-                      : ""
-                  }`}
-                  onClick={() => handlePilihAntrean(antrean)}
-                >
-                  <span className="nama-antrean">
-                    {antrean.nomor} • {antrean.nama}
-                  </span>
-
-                  <span
-                    className={`status-antrean status-${antrean.status.toLowerCase()}`}
-                  >
-                    {antrean.status}
-                  </span>
-
-                  <span>
-                    {antrean.berkas} berkas
-                  </span>
+              {loading ? (
+                <div style={{ padding: "24px", textAlign: "center", color: "#087568", fontWeight: "600" }}>
+                  Memuat daftar antrean mahasiswa...
                 </div>
-              ))}
+              ) : daftarAntrean.length === 0 ? (
+                <div style={{ padding: "28px", textAlign: "center", color: "#879791" }}>
+                  Belum ada antrean mahasiswa terdaftar pada jadwal Anda.
+                </div>
+              ) : (
+                daftarAntrean.map((antrean) => (
+                  <div
+                    key={antrean.id}
+                    className={`baris-antrean ${
+                      antreanTerpilih?.id === antrean.id
+                        ? "antrean-terpilih"
+                        : ""
+                    }`}
+                    onClick={() => handlePilihAntrean(antrean)}
+                  >
+                    <span className="nama-antrean">
+                      {antrean.nomor} • {antrean.nama}
+                    </span>
 
+                    <span
+                      className={`status-antrean status-${antrean.status.toLowerCase()}`}
+                    >
+                      {antrean.status}
+                    </span>
+
+                    <span style={{ fontSize: "11px", color: "#718096" }}>
+                      {antrean.tanggal || "-"} ({antrean.jamMulai}–{antrean.jamSelesai})
+                    </span>
+                  </div>
+                ))
+              )}
             </section>
 
-            {/* Panel detail mahasiswa */}
+            {/* Panel detail mahasiswa & input catatan bimbingan */}
             {antreanTerpilih && (
               <section className="panel-detail-antrean">
-
                 <h2>
-                  Antrean terpilih • {antreanTerpilih.nomor} •{" "}
-                  {antreanTerpilih.nama}
+                  Antrean terpilih • {antreanTerpilih.nomor} • {antreanTerpilih.nama}
                 </h2>
 
                 <p className="informasi-detail-antrean">
-                  Berkas: {antreanTerpilih.berkas} berkas
-                  {" • "}
                   {formatTanggal(antreanTerpilih.tanggal)}
                   {" • "}
                   {formatWaktu(
                     antreanTerpilih.jamMulai,
                     antreanTerpilih.jamSelesai
                   )}
+                  {antreanTerpilih.ruang ? ` • Ruang: ${antreanTerpilih.ruang}` : ""}
                 </p>
 
                 {/* Tombol tindakan sesuai status */}
                 <div className="aksi-status-antrean">
-
                   {antreanTerpilih.status === "Menunggu" && (
                     <>
                       <button
                         type="button"
                         className="tombol-aksi-utama"
+                        disabled={submitting}
                         onClick={handlePanggil}
                       >
-                        Panggil Mahasiswa
+                        {submitting ? "Memproses..." : "Panggil Mahasiswa"}
                       </button>
 
                       <button
                         type="button"
                         className="tombol-aksi-sekunder"
+                        disabled={submitting}
                         onClick={handleTunda}
                       >
                         Tunda Antrean
@@ -411,14 +486,16 @@ export const KelolaAntrean = ({ onNavigate }) => {
                       <button
                         type="button"
                         className="tombol-aksi-utama"
+                        disabled={submitting}
                         onClick={handleSelesai}
                       >
-                        Selesaikan Sesi
+                        {submitting ? "Memproses..." : "Selesaikan Sesi"}
                       </button>
 
                       <button
                         type="button"
                         className="tombol-aksi-sekunder"
+                        disabled={submitting}
                         onClick={handleTunda}
                       >
                         Tunda Antrean
@@ -430,6 +507,7 @@ export const KelolaAntrean = ({ onNavigate }) => {
                     <button
                       type="button"
                       className="tombol-aksi-utama"
+                      disabled={submitting}
                       onClick={handleBukaJadwalUlang}
                     >
                       Jadwalkan Ulang
@@ -438,37 +516,38 @@ export const KelolaAntrean = ({ onNavigate }) => {
 
                   {antreanTerpilih.status === "Selesai" && (
                     <span className="keterangan-status-selesai">
-                      Sesi bimbingan telah selesai.
+                      Sesi bimbingan telah selesai. Anda tetap dapat memperbarui catatan bimbingan mahasiswa di bawah ini.
                     </span>
                   )}
-
                 </div>
 
-                {/* Input catatan */}
+                {/* Input panel catatan bimbingan dosen */}
                 <div className="form-catatan-antrean">
-
                   <label htmlFor="catatan-bimbingan">
-                    Catatan Bimbingan
+                    Catatan Arahan Bimbingan &amp; Revisi
                   </label>
 
                   <textarea
                     id="catatan-bimbingan"
                     value={catatanEdit}
                     onChange={(e) => setCatatanEdit(e.target.value)}
-                    placeholder="Tuliskan catatan hasil bimbingan..."
-                    rows={3}
+                    placeholder="Tuliskan catatan arahan bimbingan, revisi skripsi, atau feedback untuk mahasiswa..."
+                    rows={4}
+                    disabled={submitting}
                   />
-
+                  <small style={{ color: "#718096", fontSize: "11px", marginTop: "4px", display: "block" }}>
+                    * Catatan ini tersimpan secara aman dan hanya dapat dibaca oleh mahasiswa bersangkutan.
+                  </small>
                 </div>
 
                 <button
                   type="button"
                   className="tombol-simpan-catatan"
+                  disabled={submitting}
                   onClick={handleSimpanCatatan}
                 >
-                  Simpan Catatan
+                  {submitting ? "Menyimpan Catatan..." : idCatatanAktif ? "Perbarui Catatan" : "Simpan Catatan"}
                 </button>
-
               </section>
             )}
           </>
@@ -477,14 +556,12 @@ export const KelolaAntrean = ({ onNavigate }) => {
         {/* =================================
             TAMPILAN 2: JADWALKAN ULANG
         ================================= */}
-
         {tampilan === "reschedule" && antreanTerpilih && (
           <>
             <div className="header-kelola-antrean">
               <h1>Jadwalkan Ulang Antrean</h1>
-
               <p>
-                Pindahkan antrean Ditunda ke jadwal yang tersedia.
+                Pindahkan antrean berstatus Ditunda ke jadwal bimbingan lain yang aktif dan tersedia.
               </p>
             </div>
 
@@ -492,78 +569,45 @@ export const KelolaAntrean = ({ onNavigate }) => {
               className="form-jadwal-ulang"
               onSubmit={handleSimpanJadwalUlang}
             >
-
               <h2>
                 {antreanTerpilih.nomor} • {antreanTerpilih.nama}
               </h2>
 
               <p className="keterangan-jadwal-ulang">
-                Status: Ditunda
+                Status saat ini: Ditunda
                 <br />
-                Jadwal lama: {formatTanggal(antreanTerpilih.tanggal)}
-                {" • "}
-                {formatWaktu(
-                  antreanTerpilih.jamMulai,
-                  antreanTerpilih.jamSelesai
-                )}
+                Jadwal lama: {formatTanggal(antreanTerpilih.tanggal)} ({antreanTerpilih.jamMulai}–{antreanTerpilih.jamSelesai} WIB)
               </p>
 
-              {/* Tanggal baru */}
+              {/* Pilih jadwal tujuan */}
               <div className="form-antrean-grup">
-                <label htmlFor="tanggal-baru">
-                  Jadwal Baru
+                <label htmlFor="jadwal-tujuan">
+                  Pilih Jadwal Bimbingan Baru
                 </label>
-
-                <input
-                  id="tanggal-baru"
-                  type="date"
-                  name="tanggal"
-                  value={formJadwal.tanggal}
-                  onChange={handleChangeJadwal}
-                  min="2026-11-05"
-                />
-              </div>
-
-              {/* Jam mulai dan selesai */}
-              <div className="form-antrean-baris">
-
-                <div className="form-antrean-grup">
-                  <label htmlFor="jam-mulai-baru">
-                    Jam Mulai
-                  </label>
-
-                  <input
-                    id="jam-mulai-baru"
-                    type="time"
-                    name="jamMulai"
-                    value={formJadwal.jamMulai}
-                    onChange={handleChangeJadwal}
-                  />
-                </div>
-
-                <div className="form-antrean-grup">
-                  <label htmlFor="jam-selesai-baru">
-                    Jam Selesai
-                  </label>
-
-                  <input
-                    id="jam-selesai-baru"
-                    type="time"
-                    name="jamSelesai"
-                    value={formJadwal.jamSelesai}
-                    onChange={handleChangeJadwal}
-                  />
-                </div>
-
+                <select
+                  id="jadwal-tujuan"
+                  value={idJadwalBaru}
+                  onChange={(e) => setIdJadwalBaru(e.target.value)}
+                  required
+                >
+                  <option value="">-- Pilih Jadwal Tersedia --</option>
+                  {jadwalTersedia
+                    .filter((j) => String(j.id_jadwal) !== String(antreanTerpilih.id_jadwal))
+                    .map((j) => (
+                      <option key={j.id_jadwal} value={j.id_jadwal}>
+                        {j.tanggal} ({j.jam_mulai?.slice(0, 5)} - {j.jam_selesai?.slice(0, 5)} WIB) • Kuota: {j.kuota_mhs} mhs
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div className="aksi-form-antrean">
-
                 <button
                   type="submit"
                   className="tombol-aksi-utama"
+                  disabled={submitting}
                 >
-                  Konfirmasi Jadwal Ulang
+                  {submitting ? "Memproses..." : "Konfirmasi Jadwal Ulang"}
                 </button>
 
                 <button
@@ -573,9 +617,7 @@ export const KelolaAntrean = ({ onNavigate }) => {
                 >
                   Batal
                 </button>
-
               </div>
-
             </form>
           </>
         )}
@@ -583,30 +625,24 @@ export const KelolaAntrean = ({ onNavigate }) => {
         {/* =================================
             TAMPILAN 3: JADWAL ULANG BERHASIL
         ================================= */}
-
         {tampilan === "reschedule-success" && dataSukses && (
           <>
             <div className="header-kelola-antrean">
               <h1>Antrean berhasil dijadwalkan ulang</h1>
-
               <p>Status terkini</p>
             </div>
 
             <div className="informasi-antrean-tersimpan">
-
               <h2>
-                {dataSukses.antrean.nomor} •{" "}
-                {dataSukses.antrean.nama}
+                {dataSukses.antrean.nomor} • {dataSukses.antrean.nama}
               </h2>
 
               <p>
-                Jadwal baru:{" "}
-                {formatTanggal(dataSukses.antrean.tanggal)}
+                Jadwal baru: {formatTanggal(dataSukses.antrean.tanggal)}
               </p>
 
               <p>
-                Waktu:{" "}
-                {formatWaktu(
+                Waktu: {formatWaktu(
                   dataSukses.antrean.jamMulai,
                   dataSukses.antrean.jamSelesai
                 )}
@@ -615,11 +651,6 @@ export const KelolaAntrean = ({ onNavigate }) => {
               <p>
                 Status: {dataSukses.antrean.status}
               </p>
-
-              <p>
-                Diperbarui: {formatTanggal("2026-11-05")}
-              </p>
-
             </div>
 
             <button
@@ -635,26 +666,21 @@ export const KelolaAntrean = ({ onNavigate }) => {
         {/* =================================
             TAMPILAN 4: CATATAN BERHASIL
         ================================= */}
-
         {tampilan === "note-success" && dataSukses && (
           <>
             <div className="header-kelola-antrean">
-              <h1>Catatan berhasil disimpan</h1>
-
-              <p>Status terkini</p>
+              <h1>Catatan bimbingan berhasil disimpan</h1>
+              <p>Catatan arahan telah tercatat dan notifikasi diteruskan ke mahasiswa.</p>
             </div>
 
             <div className="informasi-antrean-tersimpan">
-
-              <p>
-                {dataSukses.antrean.nomor} •{" "}
-                {dataSukses.antrean.nama}
+              <p style={{ fontWeight: "700", color: "#155e56", fontSize: "14px" }}>
+                {dataSukses.antrean.nomor} • {dataSukses.antrean.nama}
               </p>
 
-              <p>
-                {dataSukses.antrean.catatan}
+              <p style={{ whiteSpace: "pre-wrap", color: "#2d3748" }}>
+                "{dataSukses.antrean.catatan}"
               </p>
-
             </div>
 
             <button
@@ -666,7 +692,6 @@ export const KelolaAntrean = ({ onNavigate }) => {
             </button>
           </>
         )}
-
       </main>
     </div>
   );
