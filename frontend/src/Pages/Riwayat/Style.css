@@ -1,0 +1,370 @@
+
+/* =========================================
+   HALAMAN RIWAYAT
+========================================= */
+
+.halaman-riwayat {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f4f7f7;
+  box-sizing: border-box;
+}
+
+.konten-riwayat {
+  flex: 1;
+  min-width: 0;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   JUDUL DAN DESKRIPSI
+========================================= */
+
+.judul-riwayat {
+  margin-bottom: 10px;
+  color: #155e56;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.deskripsi-riwayat {
+  margin: 0 0 22px;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   DAFTAR RIWAYAT
+========================================= */
+
+.daftar-riwayat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 850px;
+}
+
+.kartu-riwayat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 18px;
+  background-color: #ffffff;
+  border: 1px solid #e7eeeb;
+  border-radius: 7px;
+  box-sizing: border-box;
+  transition: 0.2s ease;
+}
+
+.kartu-riwayat:hover {
+  border-color: #c9e2dc;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.035);
+}
+
+.info-riwayat-utama h3 {
+  margin: 0 0 10px;
+  color: #294b47;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.info-riwayat-utama p {
+  margin: 4px 0;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   TOMBOL BUKA DETAIL
+========================================= */
+
+.aksi-riwayat {
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+}
+
+.tombol-detail-riwayat,
+.tombol-upload-riwayat,
+.tombol-kembali-riwayat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 9px 17px;
+  border: none;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tombol-detail-riwayat {
+  background-color: #e5f2ef;
+  color: #087568;
+}
+
+.tombol-detail-riwayat:hover {
+  background-color: #d5eae4;
+}
+
+/* =========================================
+   KARTU INFORMASI BERKAS
+========================================= */
+
+.kartu-detail-riwayat {
+  width: 100%;
+  max-width: 850px;
+  margin-bottom: 12px;
+  padding: 18px;
+  background-color: #ffffff;
+  border: 1px solid #e7eeeb;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+
+.kartu-detail-riwayat h3 {
+  margin: 0 0 9px;
+  color: #294b47;
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.kartu-detail-riwayat p {
+  margin: 5px 0;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   KARTU CATATAN DOSEN
+========================================= */
+
+.kartu-catatan-riwayat {
+  width: 100%;
+  max-width: 850px;
+  margin-bottom: 12px;
+  padding: 18px;
+  background-color: #ffffff;
+  border: 1px solid #e7eeeb;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+
+.kartu-catatan-riwayat h3 {
+  margin: 0 0 12px;
+  color: #294b47;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kartu-catatan-riwayat ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.waktu-catatan {
+  margin: 12px 0 0;
+  color: #879791;
+  font-size: 10px;
+}
+
+/* =========================================
+   KARTU TABEL VERSI
+========================================= */
+
+.kartu-versi-riwayat {
+  width: 100%;
+  max-width: 850px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #e7eeeb;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+
+.judul-tabel-versi {
+  margin: 0 0 10px;
+  color: #294b47;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tabel-versi-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tabel-versi {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 11px;
+}
+
+.tabel-versi th {
+  padding: 10px;
+  background-color: #edf3f1;
+  color: #405b56;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tabel-versi td {
+  padding: 10px;
+  color: #718096;
+  border-bottom: 1px solid #edf1ef;
+  line-height: 1.5;
+}
+
+.tabel-versi tr:last-child td {
+  border-bottom: none;
+}
+
+.tabel-versi th:first-child,
+.tabel-versi td:first-child {
+  width: 25%;
+}
+
+.tabel-versi th:nth-child(2),
+.tabel-versi td:nth-child(2) {
+  width: 25%;
+}
+
+.tabel-versi th:last-child,
+.tabel-versi td:last-child {
+  width: 50%;
+}
+
+/* =========================================
+   TOMBOL AKSI DETAIL
+========================================= */
+
+.aksi-detail-riwayat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 5px;
+}
+
+/* Tombol Upload */
+
+.tombol-upload-riwayat {
+  background-color: #087568;
+  color: #ffffff;
+}
+
+.tombol-upload-riwayat:hover {
+  background-color: #075d54;
+  transform: translateY(-1px);
+}
+
+/* Tombol Kembali */
+
+.tombol-kembali-riwayat {
+  background-color: #e5f2ef;
+  color: #087568;
+}
+
+.tombol-kembali-riwayat:hover {
+  background-color: #d5eae4;
+}
+
+/* =========================================
+   INPUT FILE
+========================================= */
+
+.input-file-riwayat {
+  display: none;
+}
+
+/* =========================================
+   RIWAYAT KOSONG
+========================================= */
+
+.riwayat-kosong {
+  width: 100%;
+  max-width: 850px;
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 7px;
+  color: #879791;
+  font-size: 12px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   FOCUS BUTTON
+========================================= */
+
+.tombol-detail-riwayat:focus-visible,
+.tombol-upload-riwayat:focus-visible,
+.tombol-kembali-riwayat:focus-visible {
+  outline: 3px solid rgba(8, 117, 104, 0.2);
+  outline-offset: 2px;
+}
+
+/* =========================================
+   RESPONSIVE TABLET
+========================================= */
+
+@media (max-width: 768px) {
+
+  .konten-riwayat {
+    padding: 25px 18px;
+  }
+
+  .kartu-riwayat,
+  .kartu-detail-riwayat,
+  .kartu-catatan-riwayat {
+    padding: 14px;
+  }
+
+}
+
+/* =========================================
+   RESPONSIVE MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+
+  .judul-riwayat {
+    font-size: 20px;
+  }
+
+  .tabel-versi {
+    min-width: 450px;
+  }
+
+  .aksi-detail-riwayat {
+    width: 100%;
+  }
+
+  .aksi-detail-riwayat button {
+    width: 100%;
+  }
+
+  .aksi-riwayat button {
+    width: 100%;
+  }
+
+}

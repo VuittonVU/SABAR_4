@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { KelolaJadwal } from './Pages/Kelola_Jadwal/Kelola_Jadwal.jsx';
 import { DashboardDosen } from "./Pages/Dashboard_Dosen/Dashboard_Dosen.jsx";
+import { KelolaAntrean } from "./Pages/Kelola_Antrean/Kelola_Antrean.jsx";
+import { Riwayat } from "./Pages/Riwayat/Riwayat.jsx";
 
 const forms = {
   '/login': {
@@ -128,28 +130,30 @@ if (path === "/dashboard-dosen") {
 if (path === "/kelola-jadwal") {
   return <KelolaJadwal onNavigate={go} />;
 }
-
-// Halaman yang belum dibuat
-if (path === "/kelola-antrean" || path === "/riwayat") {
-  const namaHalaman =
-    path === "/kelola-antrean"
-      ? "Kelola Antrean"
-      : "Riwayat Bimbingan";
-
-  return (
-    <div style={{ padding: "40px" }}>
-      <h1>{namaHalaman}</h1>
-      <p>Halaman ini belum tersedia.</p>
-
-      <button
-        type="button"
-        onClick={() => go("/dashboard-dosen")}
-      >
-        Kembali ke Dashboard
-      </button>
-    </div>
-  );
+if (path === "/kelola-antrean") {
+  return <KelolaAntrean onNavigate={go} />;
 }
+if (path === "/riwayat") {
+  return <Riwayat onNavigate={go} />;
+}
+// Halaman yang belum dibuat
+// if (path === "/riwayat") {
+//   const namaHalaman =
+//     "Riwayat";  
+//   return (
+//     <div style={{ padding: "40px" }}>
+//       <h1>{namaHalaman}</h1>
+//       <p>Halaman ini belum tersedia.</p>
+
+//       <button
+//         type="button"
+//         onClick={() => go("/dashboard-dosen")}
+//       >
+//         Kembali ke Dashboard
+//       </button>
+//     </div>
+//   );
+// }
 
   const formPath = Object.hasOwn(forms, path) ? path : '/login';
 
