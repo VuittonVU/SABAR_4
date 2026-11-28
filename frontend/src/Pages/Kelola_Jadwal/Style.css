@@ -1,0 +1,414 @@
+
+/* =========================================
+   HALAMAN UTAMA
+========================================= */
+
+.halaman-kelola-jadwal {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f4f7f7;
+  box-sizing: border-box;
+}
+
+.konten-SABAR {
+  flex: 1;
+  min-width: 0;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   HEADER HALAMAN
+========================================= */
+
+.text-wrapper-3 {
+  margin-bottom: 10px;
+  color: #155e56;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.p {
+  margin: 0 0 22px;
+  color: #718096;
+  font-size: 12px;
+}
+
+/* =========================================
+   DAFTAR JADWAL
+========================================= */
+
+.element-november {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 17px;
+  background-color: #ffffff;
+  border: 1px solid #e7eeeb;
+  border-radius: 7px;
+  box-sizing: border-box;
+  transition: 0.2s ease;
+}
+
+.element-november:hover {
+  border-color: #c9e2dc;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.035);
+}
+
+.element-november .text-wrapper-4 {
+  color: #294b47;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.element-november .text-wrapper-5 {
+  margin: 0;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.detail-ruang {
+  margin: 0;
+  color: #718096;
+  font-size: 11px;
+}
+
+/* =========================================
+   TOMBOL AKSI JADWAL
+========================================= */
+
+.aksi-jadwal {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.tombol-edit,
+.tombol-hapus,
+.buat-jadwal,
+.tombol-simpan-edit,
+.tombol-batal-edit,
+.tombol-kembali-jadwal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Tombol Edit */
+
+.tombol-edit {
+  background-color: #e5f2ef;
+  color: #087568;
+}
+
+.tombol-edit:hover {
+  background-color: #d5eae4;
+}
+
+/* Tombol Hapus */
+
+.tombol-hapus {
+  background-color: #fce8e5;
+  color: #b65b4c;
+}
+
+.tombol-hapus:hover {
+  background-color: #f8d8d3;
+}
+
+/* Tombol Buat Jadwal */
+
+.buat-jadwal {
+  margin-top: 8px;
+  background-color: #087568;
+  color: #ffffff;
+}
+
+.buat-jadwal:hover {
+  background-color: #075d54;
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   FORM BUAT DAN EDIT JADWAL
+========================================= */
+
+.form-edit-jadwal {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 22px;
+  padding: 25px;
+  background-color: #ffffff;
+  border: 1px solid #e5ecea;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.035);
+  box-sizing: border-box;
+}
+
+.form-edit-jadwal h2 {
+  margin: 0 0 5px;
+  color: #294b47;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* =========================================
+   GRUP INPUT
+========================================= */
+
+.form-edit-grup {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.form-edit-grup label {
+  color: #405b56;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.form-edit-grup input,
+.form-edit-grup select {
+  width: 100%;
+  height: 39px;
+  padding: 9px 11px;
+  border: 1px solid #dce6e3;
+  border-radius: 5px;
+  background-color: #ffffff;
+  color: #354b46;
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+  transition: 0.2s ease;
+}
+
+.form-edit-grup input:focus,
+.form-edit-grup select:focus {
+  border-color: #087568;
+  box-shadow: 0 0 0 3px rgba(8, 117, 104, 0.09);
+}
+
+/* Keterangan tambahan */
+
+.form-edit-grup small {
+  color: #879791;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   INPUT JAM MULAI DAN JAM SELESAI
+========================================= */
+
+.form-edit-baris {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.form-edit-baris .form-edit-grup {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-edit-grup input[type="time"] {
+  width: 100%;
+  height: 39px;
+  padding: 9px 11px;
+  border: 1px solid #dce6e3;
+  border-radius: 5px;
+  background-color: #ffffff;
+  color: #354b46;
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.form-edit-grup input[type="time"]:focus {
+  border-color: #087568;
+  box-shadow: 0 0 0 3px rgba(8, 117, 104, 0.09);
+}
+
+/* =========================================
+   TOMBOL FORM
+========================================= */
+
+.aksi-form-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 5px;
+  padding-top: 17px;
+  border-top: 1px solid #edf1ef;
+}
+
+/* Simpan Perubahan */
+
+.tombol-simpan-edit,
+.tombol-kembali-jadwal {
+  background-color: #087568;
+  color: #ffffff;
+}
+
+.tombol-simpan-edit:hover,
+.tombol-kembali-jadwal:hover {
+  background-color: #075d54;
+  transform: translateY(-1px);
+}
+
+/* Batal */
+
+.tombol-batal-edit {
+  background-color: #e5f2ef;
+  color: #087568;
+  border-color: #d5e9e5;
+}
+
+.tombol-batal-edit:hover {
+  background-color: #d5eae4;
+}
+
+/* =========================================
+   KONFIRMASI BERHASIL
+========================================= */
+
+.jadwal-berhasil {
+  width: 100%;
+  max-width: 700px;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e5ecea;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.jadwal-berhasil h2 {
+  margin: 0 0 15px;
+  color: #294b47;
+  font-size: 18px;
+}
+
+.jadwal-berhasil p {
+  margin: 0;
+  padding: 13px;
+  background-color: #e3f2ee;
+  border-radius: 5px;
+  color: #58766f;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* Tombol kembali */
+
+.tombol-kembali-jadwal {
+  margin-top: 15px;
+}
+
+/* =========================================
+   PESAN JADWAL KOSONG
+========================================= */
+
+.jadwal-kosong {
+  margin: 15px 0;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 7px;
+  color: #879791;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* =========================================
+   FOCUS BUTTON
+========================================= */
+
+.tombol-edit:focus-visible,
+.tombol-hapus:focus-visible,
+.buat-jadwal:focus-visible,
+.tombol-simpan-edit:focus-visible,
+.tombol-batal-edit:focus-visible,
+.tombol-kembali-jadwal:focus-visible {
+  outline: 3px solid rgba(8, 117, 104, 0.2);
+  outline-offset: 2px;
+}
+
+/* =========================================
+   RESPONSIVE TABLET
+========================================= */
+
+@media (max-width: 768px) {
+
+  .konten-SABAR {
+    padding: 25px 18px;
+  }
+
+  .form-edit-jadwal {
+    padding: 20px;
+  }
+
+  .element-november {
+    padding: 14px;
+  }
+
+}
+
+/* =========================================
+   RESPONSIVE MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+
+  .text-wrapper-3 {
+    font-size: 20px;
+  }
+
+  .form-edit-baris {
+    flex-direction: column;
+    gap: 17px;
+  }
+
+  .aksi-jadwal {
+    flex-wrap: wrap;
+  }
+
+  .aksi-form-edit {
+    width: 100%;
+  }
+
+  .aksi-form-edit button {
+    width: 100%;
+  }
+
+  .buat-jadwal {
+    width: 100%;
+  }
+
+}
