@@ -24,6 +24,11 @@ export const SidebarDosen = ({ activePage, onNavigate, onLogout }) => {
       path: "/riwayat",
       page: "riwayat",
     },
+    {
+      label: "Notifikasi",
+      path: "/notifikasi",
+      page: "notifikasi",
+    },
   ];
 
   return (

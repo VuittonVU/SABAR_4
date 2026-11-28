@@ -5,11 +5,29 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
   const nimUser = user?.username || '-';
 
   const [antreanAktif, setAntreanAktif] = useState(null);
+  const [notifikasiTerbaru, setNotifikasiTerbaru] = useState([]);
   const [loading, setLoading] = useState(true);
   const [batalLoading, setBatalLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const token = localStorage.getItem('token');
+
+  async function fetchNotifikasi() {
+    try {
+      const res = await fetch('/api/notifikasi?limit=5', {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setNotifikasiTerbaru(json.data || []);
+      }
+    } catch {
+      // Abaikan jika gagal
+    }
+  }
 
   async function fetchAntreanAktif() {
     setLoading(true);
@@ -36,7 +54,27 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
 
   useEffect(() => {
     fetchAntreanAktif();
+    fetchNotifikasi();
   }, []);
+
+  async function handleTandaiDibaca(idNotifikasi) {
+    try {
+      const res = await fetch(`/api/notifikasi/${idNotifikasi}/dibaca`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        setNotifikasiTerbaru((prev) =>
+          prev.map((n) => (n.id_notifikasi === idNotifikasi ? { ...n, status_dibaca: true } : n))
+        );
+      }
+    } catch {
+      // Abaikan
+    }
+  }
 
   async function handleBatalAntrean(idAntrian) {
     if (!window.confirm('Apakah Anda yakin ingin membatalkan nomor antrean ini?')) {
@@ -133,7 +171,7 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
           </button>
           <button
             type="button"
-            onClick={() => alert('Fitur Riwayat Bimbingan segera hadir!')}
+            onClick={() => onNavigate && onNavigate('/berkas-revisi')}
             style={{
               textAlign: 'left',
               padding: '12px 16px',
@@ -146,7 +184,24 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
               fontSize: '15px'
             }}
           >
-            Riwayat Bimbingan
+            Berkas &amp; Catatan Revisi
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate && onNavigate('/notifikasi')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'transparent',
+              color: '#d1e0d3',
+              border: 'none',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontSize: '15px'
+            }}
+          >
+            Pusat Notifikasi
           </button>
         </nav>
 
@@ -295,6 +350,23 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
                 )}
                 <button
                   type="button"
+                  style={{
+                    width: 'auto',
+                    minWidth: '160px',
+                    backgroundColor: '#e5f2ef',
+                    color: '#087568',
+                    border: '1px solid #cce8de',
+                    borderRadius: '6px',
+                    padding: '10px 16px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onNavigate && onNavigate('/berkas-revisi')}
+                >
+                  📖 Catatan Revisi Dosen
+                </button>
+                <button
+                  type="button"
                   className="primary"
                   style={{ width: 'auto', minWidth: '160px' }}
                   onClick={() => onNavigate && onNavigate('/ambil-antrean')}
@@ -318,6 +390,96 @@ export function DashboardMahasiswa({ user, onNavigate, onLogout }) {
               >
                 + Ambil Nomor Antrean Sekarang
               </button>
+            </div>
+          )}
+        </section>
+
+        {/* Section Widget Notifikasi Terbaru */}
+        <section style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h2 style={{ margin: 0, fontSize: '20px', color: '#153b36', fontWeight: '800' }}>
+              🔔 Notifikasi Terbaru
+            </h2>
+            <button
+              type="button"
+              onClick={() => onNavigate && onNavigate('/notifikasi')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#087568',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Lihat Semua Notifikasi →
+            </button>
+          </div>
+
+          {notifikasiTerbaru.length === 0 ? (
+            <div style={{
+              padding: '20px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '10px',
+              border: '1px solid #e7eeeb',
+              color: '#718096',
+              fontSize: '14px'
+            }}>
+              Belum ada notifikasi baru untuk Anda.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {notifikasiTerbaru.map((n) => (
+                <div
+                  key={n.id_notifikasi}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '14px 18px',
+                    backgroundColor: n.status_dibaca ? '#ffffff' : '#f0f9f6',
+                    borderRadius: '8px',
+                    border: n.status_dibaca ? '1px solid #e7eeeb' : '1px solid #b6e2d6'
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, marginRight: '12px' }}>
+                    <span style={{ fontSize: '18px' }}>{n.status_dibaca ? '📨' : '📩'}</span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#2d3748', fontWeight: n.status_dibaca ? '400' : '600' }}>
+                        {n.pesan}
+                      </p>
+                      <span style={{ fontSize: '11px', color: '#718096' }}>
+                        {new Date(n.waktu_dibuat).toLocaleString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {!n.status_dibaca && (
+                    <button
+                      type="button"
+                      onClick={() => handleTandaiDibaca(n.id_notifikasi)}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #cce8de',
+                        color: '#087568',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Tandai Dibaca
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </section>

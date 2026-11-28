@@ -162,7 +162,7 @@ export function AmbilAntrean({ user, onNavigate, onLogout }) {
           </button>
           <button
             type="button"
-            onClick={() => alert('Fitur Riwayat Bimbingan segera hadir!')}
+            onClick={() => onNavigate && onNavigate('/berkas-revisi')}
             style={{
               textAlign: 'left',
               padding: '12px 16px',
@@ -175,7 +175,24 @@ export function AmbilAntrean({ user, onNavigate, onLogout }) {
               fontSize: '15px'
             }}
           >
-            Riwayat Bimbingan
+            Berkas &amp; Catatan Revisi
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate && onNavigate('/notifikasi')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'transparent',
+              color: '#d1e0d3',
+              border: 'none',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontSize: '15px'
+            }}
+          >
+            Pusat Notifikasi
           </button>
         </nav>
 

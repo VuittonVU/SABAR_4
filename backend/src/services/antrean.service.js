@@ -134,6 +134,77 @@ async function detail(idDosen, idAntrian) {
 }
 
 /**
+ * Daftar antrean bimbingan mahasiswa untuk Dosen
+ */
+async function daftarAntreanDosen(idDosen, idJadwal = null) {
+    const params = [idDosen];
+    let whereClause = 'WHERE j.id_dosen = $1';
+    if (idJadwal) {
+        params.push(idJadwal);
+        whereClause += ' AND a.id_jadwal = $2';
+    }
+    const { rows } = await query(`
+        SELECT a.id_antrian, a.id_jadwal, a.id_mahasiswa, a.nomor_antrian,
+               a.status_antrian, a.versi,
+               to_char(a.waktu_daftar, 'YYYY-MM-DD HH24:MI:SS') AS waktu_daftar,
+               to_char(j.tanggal, 'YYYY-MM-DD') AS tanggal,
+               to_char(j.jam_mulai, 'HH24:MI') AS jam_mulai,
+               to_char(j.jam_selesai, 'HH24:MI') AS jam_selesai,
+               j.ruang,
+               p.nama AS nama_mahasiswa,
+               p.email_npm,
+               c.id_catatan,
+               c.isi_catatan AS catatan,
+               to_char(c.updated_at, 'YYYY-MM-DD HH24:MI:SS') AS catatan_updated_at
+        FROM antrian a
+        JOIN jadwal_bimbingan j ON j.id_jadwal = a.id_jadwal
+        JOIN pengguna p ON p.id_pengguna = a.id_mahasiswa
+        LEFT JOIN LATERAL (
+            SELECT id_catatan, isi_catatan, updated_at
+            FROM catatan_bimbingan
+            WHERE id_antrian = a.id_antrian
+            ORDER BY created_at DESC, id_catatan DESC
+            LIMIT 1
+        ) c ON true
+        ${whereClause}
+        ORDER BY j.tanggal DESC, a.nomor_antrian ASC
+    `, params);
+    return rows;
+}
+
+/**
+ * Riwayat antrean dan catatan bimbingan milik Mahasiswa
+ */
+async function riwayatAntreanMahasiswa(idMahasiswa) {
+    const { rows } = await query(`
+        SELECT a.id_antrian, a.id_jadwal, a.nomor_antrian, a.status_antrian, a.versi,
+               to_char(a.waktu_daftar, 'YYYY-MM-DD HH24:MI:SS') AS waktu_daftar,
+               j.id_dosen, to_char(j.tanggal, 'YYYY-MM-DD') AS tanggal,
+               to_char(j.jam_mulai, 'HH24:MI') AS jam_mulai,
+               to_char(j.jam_selesai, 'HH24:MI') AS jam_selesai,
+               j.ruang, j.durasi_menit,
+               p.nama AS nama_dosen,
+               c.id_catatan,
+               c.isi_catatan AS catatan,
+               to_char(c.created_at, 'YYYY-MM-DD HH24:MI:SS') AS catatan_created_at,
+               to_char(c.updated_at, 'YYYY-MM-DD HH24:MI:SS') AS catatan_updated_at
+        FROM antrian a
+        JOIN jadwal_bimbingan j ON j.id_jadwal = a.id_jadwal
+        JOIN pengguna p ON p.id_pengguna = j.id_dosen
+        LEFT JOIN LATERAL (
+            SELECT id_catatan, isi_catatan, created_at, updated_at
+            FROM catatan_bimbingan
+            WHERE id_antrian = a.id_antrian
+            ORDER BY created_at DESC, id_catatan DESC
+            LIMIT 1
+        ) c ON true
+        WHERE a.id_mahasiswa = $1
+        ORDER BY a.waktu_daftar DESC
+    `, [idMahasiswa]);
+    return rows;
+}
+
+/**
  * Kalkulasi posisi antrean dan estimasi waktu dilayani berdasarkan durasi rata-rata sesi bimbingan.
  */
 async function kalkulasiEstimasi(db, idJadwal, nomorAntrian, durasiMenit = 15, jamMulai = '09:00:00') {
@@ -469,6 +540,8 @@ async function batalAntreanMahasiswa(idMahasiswa, idAntrian) {
 
 module.exports = {
     detail,
+    daftarAntreanDosen,
+    riwayatAntreanMahasiswa,
     ubahStatus,
     kalkulasiEstimasi,
     ambilNomorAntrean,
