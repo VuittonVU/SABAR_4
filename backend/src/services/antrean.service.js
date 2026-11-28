@@ -416,8 +416,10 @@ async function daftarJadwalTersedia(idMahasiswa = null) {
 
     return rows.map((j) => ({
         ...j,
-        sisa_kuota: Math.max(0, j.kuota_mhs - j.total_terdaftar),
-        is_penuh: j.total_terdaftar >= j.kuota_mhs,
+        total_terdaftar: Number(j.total_terdaftar),
+        peserta: Number(j.total_terdaftar),
+        sisa_kuota: Math.max(0, j.kuota_mhs - Number(j.total_terdaftar)),
+        is_penuh: Number(j.total_terdaftar) >= j.kuota_mhs,
         sudah_terdaftar: Boolean(j.sudah_terdaftar),
     }));
 }

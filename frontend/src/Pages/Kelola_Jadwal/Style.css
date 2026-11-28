@@ -39,6 +39,34 @@
 }
 
 /* =========================================
+   PESAN FEEDBACK & ERROR
+========================================= */
+
+.pesan-error-jadwal {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  background-color: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  border-radius: 6px;
+  color: #9b1c1c;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.loading-jadwal {
+  margin: 20px 0;
+  padding: 24px;
+  text-align: center;
+  color: #087568;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: #ffffff;
+  border-radius: 7px;
+  border: 1px solid #e7eeeb;
+}
+
+/* =========================================
    DAFTAR JADWAL
 ========================================= */
 

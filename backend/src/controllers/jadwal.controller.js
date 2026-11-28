@@ -28,10 +28,20 @@ function handler(operation, message, status = 200) {
     };
 }
 
+async function daftarAktif(req, res, next) {
+    try {
+        const data = await service.daftarAktif(res.locals.idPengguna);
+        return sendSuccess(res, 'Daftar jadwal aktif berhasil diambil.', data);
+    } catch (err) {
+        next(err);
+    }
+}
+
 module.exports = {
     validasiInput,
     validasiId,
     daftar: handler((id) => service.daftar(id), 'Daftar jadwal berhasil diambil.'),
+    daftarAktif,
     detail: handler(service.detail, 'Detail jadwal berhasil diambil.'),
     tambah: handler((id, unusedId, body) => service.tambah(id, body), 'Jadwal berhasil ditambahkan.', 201),
     ubah: handler(service.ubah, 'Jadwal berhasil diperbarui.'),

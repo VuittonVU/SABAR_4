@@ -55,9 +55,48 @@ async function cekBenturan(client, idDosen, data, idJadwal = null) {
 }
 
 async function daftar(idDosen) {
-    const { rows } = await query(`SELECT ${kolom} FROM jadwal_bimbingan j
-        WHERE j.id_dosen = $1 ORDER BY j.tanggal, j.jam_mulai, j.id_jadwal`, [idDosen]);
+    const { rows } = await query(`
+        SELECT ${kolom},
+               COUNT(a.id_antrian)::int AS total_terdaftar,
+               COUNT(a.id_antrian)::int AS peserta,
+               GREATEST(0, j.kuota_mhs - COUNT(a.id_antrian)::int)::int AS sisa_kuota
+        FROM jadwal_bimbingan j
+        LEFT JOIN antrian a ON a.id_jadwal = j.id_jadwal AND a.status_antrian NOT IN ('Dibatalkan')
+        WHERE j.id_dosen = $1
+        GROUP BY j.id_jadwal
+        ORDER BY j.tanggal, j.jam_mulai, j.id_jadwal
+    `, [idDosen]);
     return rows;
+}
+
+async function daftarAktif(idMahasiswa = null) {
+    const { rows } = await query(`
+        SELECT j.id_jadwal, j.id_dosen,
+               to_char(j.tanggal, 'YYYY-MM-DD') AS tanggal,
+               to_char(j.jam_mulai, 'HH24:MI') AS jam_mulai,
+               to_char(j.jam_selesai, 'HH24:MI') AS jam_selesai,
+               j.ruang, j.kuota_mhs, j.durasi_menit, j.status_jadwal,
+               p.nama AS nama_dosen,
+               COUNT(a.id_antrian)::int AS total_terdaftar,
+               COUNT(a.id_antrian)::int AS peserta,
+               GREATEST(0, j.kuota_mhs - COUNT(a.id_antrian)::int)::int AS sisa_kuota,
+               BOOL_OR(a.id_mahasiswa = $1) AS sudah_terdaftar
+        FROM jadwal_bimbingan j
+        JOIN pengguna p ON p.id_pengguna = j.id_dosen
+        LEFT JOIN antrian a ON a.id_jadwal = j.id_jadwal AND a.status_antrian NOT IN ('Dibatalkan')
+        WHERE LOWER(j.status_jadwal) = 'aktif'
+        GROUP BY j.id_jadwal, p.nama
+        ORDER BY j.tanggal ASC, j.jam_mulai ASC
+    `, [idMahasiswa]);
+
+    return rows.map((j) => ({
+        ...j,
+        total_terdaftar: Number(j.total_terdaftar),
+        peserta: Number(j.peserta),
+        sisa_kuota: Number(j.sisa_kuota),
+        is_penuh: Number(j.total_terdaftar) >= j.kuota_mhs,
+        sudah_terdaftar: Boolean(j.sudah_terdaftar),
+    }));
 }
 
 async function ambil(client, idDosen, idJadwal, lock = false) {
@@ -68,7 +107,18 @@ async function ambil(client, idDosen, idJadwal, lock = false) {
 }
 
 async function detail(idDosen, idJadwal) {
-    return ambil({ query }, idDosen, idJadwal);
+    const { rows } = await query(`
+        SELECT ${kolom},
+               COUNT(a.id_antrian)::int AS total_terdaftar,
+               COUNT(a.id_antrian)::int AS peserta,
+               GREATEST(0, j.kuota_mhs - COUNT(a.id_antrian)::int)::int AS sisa_kuota
+        FROM jadwal_bimbingan j
+        LEFT JOIN antrian a ON a.id_jadwal = j.id_jadwal AND a.status_antrian NOT IN ('Dibatalkan')
+        WHERE j.id_jadwal = $1 AND j.id_dosen = $2
+        GROUP BY j.id_jadwal
+    `, [idJadwal, idDosen]);
+    if (!rows.length) throw ApiError.notFound('Jadwal tidak ditemukan.');
+    return rows[0];
 }
 
 async function tambah(idDosen, input) {
@@ -129,4 +179,4 @@ async function hapus(idDosen, idJadwal) {
     });
 }
 
-module.exports = { daftar, detail, tambah, ubah, hapus };
+module.exports = { daftar, daftarAktif, detail, tambah, ubah, hapus };

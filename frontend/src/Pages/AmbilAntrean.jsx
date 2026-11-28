@@ -28,8 +28,11 @@ export function AmbilAntrean({ user, onNavigate, onLogout }) {
         setAntreanAktif(null);
       }
 
-      // Ambil daftar jadwal aktif dosen yang tersedia
-      const resJadwal = await fetch('/api/antrean/jadwal-tersedia', { headers });
+      // Ambil daftar jadwal aktif beserta kalkulasi peserta dan sisa kuota
+      let resJadwal = await fetch('/api/jadwal/aktif', { headers });
+      if (!resJadwal.ok) {
+        resJadwal = await fetch('/api/antrean/jadwal-tersedia', { headers });
+      }
       const dataJadwal = await resJadwal.json();
       if (resJadwal.ok && dataJadwal.success) {
         setJadwalList(dataJadwal.data || []);
