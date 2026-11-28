@@ -21,16 +21,21 @@ test('Jadwal, antrean, dan notifikasi melalui API dengan PostgreSQL terisolasi',
         // Fixture adalah Query Database.txt yang disediakan tim.
         await pool.query(fs.readFileSync(path.join(__dirname, 'fixtures/sabar.sql'), 'utf8'));
         await pool.query(`
-            INSERT INTO data_referensi (tipe,nama) VALUES ('role','Dosen'),('role','Mahasiswa');
+            INSERT INTO data_referensi (tipe,nama) VALUES ('role','Dosen'),('role','Mahasiswa'),('role','Admin');
             INSERT INTO pengguna (id_role,username,kata_sandi_hash,nama,email_npm) VALUES
                 (1,'dosen1','unused','Dosen 1','dosen1@example.test'),
                 (1,'dosen2','unused','Dosen 2','dosen2@example.test'),
                 (2,'mhs1','unused','Mahasiswa 1','mhs1@example.test'),
-                (2,'mhs2','unused','Mahasiswa 2','mhs2@example.test');
+                (2,'mhs2','unused','Mahasiswa 2','mhs2@example.test'),
+                (3,'admin1','unused','Admin 1','admin1@example.test');
             INSERT INTO jadwal_bimbingan (id_dosen,tanggal,jam_mulai,jam_selesai,kuota_mhs,status_jadwal)
                 VALUES (1,'2026-12-01','07:00','08:00',3,'Aktif');
         `);
-        for (const migrationName of ['20261122_jadwal_notifikasi.sql', '20261123_antrean_status.sql']) {
+        for (const migrationName of [
+            '20261122_jadwal_notifikasi.sql',
+            '20261123_antrean_status.sql',
+            '20261128_admin_audit.sql',
+        ]) {
             const migration = fs.readFileSync(path.join(__dirname, '../migrations', migrationName), 'utf8');
             await pool.query(migration);
             await pool.query(migration);
@@ -47,6 +52,8 @@ test('Jadwal, antrean, dan notifikasi melalui API dengan PostgreSQL terisolasi',
         app.use('/api/notifikasi', require('../src/routes/notifikasi.routes'));
         app.use('/api/antrean/:idAntrian/catatan', require('../src/routes/catatan_bimbingan.routes'));
         app.use('/api/antrean', require('../src/routes/antrean.routes'));
+        app.use('/api/admin-audit', require('../src/routes/admin_audit.routes'));
+        app.use('/api/berkas-revisi', require('../src/routes/berkas_revisi.routes'));
         app.use(require('../src/middlewares/error.middleware').errorHandler);
         server = await new Promise((resolve) => {
             const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
@@ -57,6 +64,7 @@ test('Jadwal, antrean, dan notifikasi melalui API dengan PostgreSQL terisolasi',
             d2: jwt.sign({ sub: '2', role: 'Dosen' }, config.jwt.secret, { expiresIn: '1h' }),
             m1: jwt.sign({ sub: '3', role: 'Mahasiswa' }, config.jwt.secret, { expiresIn: '1h' }),
             m2: jwt.sign({ sub: '4', role: 'Mahasiswa' }, config.jwt.secret, { expiresIn: '1h' }),
+            admin: jwt.sign({ sub: '5', role: 'Admin' }, config.jwt.secret, { expiresIn: '1h' }),
         };
         async function call(method, url, token, body) {
             const response = await fetch(base + url, {
@@ -219,6 +227,93 @@ test('Jadwal, antrean, dan notifikasi melalui API dengan PostgreSQL terisolasi',
         assert.equal((await call('PATCH', '/api/antrean/' + antreanUlang + '/status', 'd1', {
             status_antrian: 'Dijadwalkan Ulang', versi: 2, id_jadwal_baru: jadwalUlang.data.id_jadwal,
         })).status, 200);
+
+        assert.equal((await call('GET', '/api/admin-audit/pengguna', 'm1')).status, 403);
+        const users = await call('GET', '/api/admin-audit/pengguna', 'admin');
+        assert.equal(users.status, 200);
+        assert.ok(users.data.every((user) => !Object.hasOwn(user, 'kata_sandi_hash')));
+        const createdUser = await call('POST', '/api/admin-audit/pengguna', 'admin', {
+            id_role: 2,
+            username: 'admin-created',
+            password: 'KataSandiAman123!',
+            nama: 'Pengguna Baru',
+            email_npm: 'baru@example.test',
+        });
+        assert.equal(createdUser.status, 201);
+        assert.equal(createdUser.data.status_aktif, true);
+        assert.ok(!Object.hasOwn(createdUser.data, 'kata_sandi_hash'));
+        const createdUserId = createdUser.data.id_pengguna;
+        const createdUserToken = jwt.sign(
+            { sub: String(createdUserId), role: 'Mahasiswa' },
+            config.jwt.secret,
+            { expiresIn: '1h' },
+        );
+        const updatedUser = await call('PATCH', '/api/admin-audit/pengguna/' + createdUserId, 'admin', {
+            nama: 'Nama Diperbarui',
+            password: 'KataSandiBaru123!',
+        });
+        assert.equal(updatedUser.status, 200);
+        assert.equal(updatedUser.data.nama, 'Nama Diperbarui');
+        const storedPassword = (await pool.query(
+            'SELECT kata_sandi_hash FROM pengguna WHERE id_pengguna=$1',
+            [createdUserId],
+        )).rows[0].kata_sandi_hash;
+        assert.notEqual(storedPassword, 'KataSandiBaru123!');
+        assert.equal(await require('bcryptjs').compare('KataSandiBaru123!', storedPassword), true);
+
+        assert.equal((await call(
+            'PATCH',
+            '/api/admin-audit/pengguna/' + createdUserId + '/nonaktifkan',
+            'admin',
+        )).status, 200);
+        assert.equal((await call('GET', '/api/berkas-revisi/88', null)).status, 401);
+        const inactiveTokenResponse = await fetch(base + '/api/berkas-revisi/88', {
+            headers: { Authorization: 'Bearer ' + createdUserToken },
+        });
+        assert.equal(inactiveTokenResponse.status, 401);
+        assert.equal((await call(
+            'PATCH',
+            '/api/admin-audit/pengguna/' + createdUserId + '/aktifkan',
+            'admin',
+        )).status, 200);
+
+        assert.equal((await call('GET', '/api/berkas-revisi/88', 'admin')).status, 403);
+        assert.equal((await call('GET', '/api/berkas-revisi/88/download', 'admin')).status, 403);
+        const deniedAccess = await pool.query(`
+            SELECT aksi, nama_tabel, id_data, ip_address, status
+            FROM audit_log
+            WHERE id_user=5 AND nama_tabel='berkas_revisi'
+            ORDER BY id_log DESC LIMIT 2
+        `);
+        assert.equal(deniedAccess.rows.length, 2);
+        assert.ok(deniedAccess.rows.every((row) =>
+            row.aksi === 'AKSES_DITOLAK'
+            && row.id_data === '88'
+            && row.ip_address
+            && row.status === 'ditolak'));
+
+        const reference = await call('POST', '/api/admin-audit/referensi', 'admin', {
+            tipe: 'uji',
+            nama: 'Referensi Uji',
+            nilai: 'A',
+            detail_info: 'Tidak sensitif',
+        });
+        assert.equal(reference.status, 201);
+        const referenceId = reference.data.id_referensi;
+        assert.equal((await call('PATCH', '/api/admin-audit/referensi/' + referenceId, 'admin', {
+            nama: 'Referensi Diperbarui',
+        })).data.nama, 'Referensi Diperbarui');
+        assert.equal((await call('DELETE', '/api/admin-audit/referensi/' + referenceId, 'admin')).status, 200);
+
+        const audited = await pool.query(`
+            SELECT aksi, nama_tabel, id_data, waktu, ip_address, status
+            FROM audit_log
+            WHERE id_user=5 AND nama_tabel IN ('pengguna', 'data_referensi')
+        `);
+        assert.ok(audited.rows.length >= 8);
+        assert.ok(audited.rows.every((row) =>
+            row.aksi && row.nama_tabel && row.waktu && row.ip_address && row.status === 'berhasil'));
+        assert.ok(!JSON.stringify(audited.rows).includes('KataSandi'));
     } finally {
         if (server) await new Promise((resolve) => server.close(resolve));
         if (pool) await pool.end();

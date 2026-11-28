@@ -13,14 +13,14 @@ const loginService = async ({ nim, username, password }) => {
     }
 
     const { rows } = await query(`
-        SELECT p.id_pengguna, p.id_role, r.nama AS role, p.username, p.kata_sandi_hash, p.nama, p.email_npm
+        SELECT p.id_pengguna, p.id_role, p.status_aktif, r.nama AS role, p.username, p.kata_sandi_hash, p.nama, p.email_npm
         FROM pengguna p
         LEFT JOIN data_referensi r ON r.id_referensi = p.id_role
         WHERE p.username = $1;
     `, [identitas]);
 
     const user = rows[0];
-    if (!user) {
+    if (!user || !user.status_aktif) {
         throw ApiError.unauthorized('NIM/NIP atau kata sandi tidak valid.');
     }
 

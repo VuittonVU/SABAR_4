@@ -7,12 +7,13 @@ async function main() {
         const migrations = [
             '20261122_jadwal_notifikasi.sql',
             '20261123_antrean_status.sql',
+            '20261128_admin_audit.sql',
         ];
         for (const migration of migrations) {
             const sql = fs.readFileSync(path.join(__dirname, '../migrations', migration), 'utf8');
             await pool.query(sql);
         }
-        console.log('Migrasi jadwal, notifikasi, dan status antrean berhasil.');
+        console.log('Migrasi jadwal, notifikasi, status antrean, dan akun berhasil.');
     } catch (err) {
         console.error('Migrasi gagal:', err.code || err.name);
         process.exitCode = 1;
