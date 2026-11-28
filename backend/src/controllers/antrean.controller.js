@@ -44,4 +44,54 @@ async function ubahStatus(req, res, next) {
     }
 }
 
-module.exports = { validasiId, validasiPerubahan, detail, ubahStatus };
+async function ambilNomorAntrean(req, res, next) {
+    try {
+        const idJadwal = req.body?.id_jadwal;
+        if (!idJadwal || !idValid(String(idJadwal))) {
+            return next(ApiError.badRequest('ID jadwal wajib diisi dan harus berupa angka valid.'));
+        }
+
+        const data = await antreanService.ambilNomorAntrean(res.locals.idPengguna, String(idJadwal));
+        return sendSuccess(res, 'Nomor antrean berhasil diambil.', data, 201);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function antreanAktif(req, res, next) {
+    try {
+        const data = await antreanService.antreanAktifMahasiswa(res.locals.idPengguna);
+        return sendSuccess(res, 'Data antrean aktif berhasil diambil.', data);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function jadwalTersedia(req, res, next) {
+    try {
+        const data = await antreanService.daftarJadwalTersedia(res.locals.idPengguna);
+        return sendSuccess(res, 'Daftar jadwal bimbingan tersedia berhasil diambil.', data);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function batalAntrean(req, res, next) {
+    try {
+        const data = await antreanService.batalAntreanMahasiswa(res.locals.idPengguna, req.params.idAntrian);
+        return sendSuccess(res, 'Antrean berhasil dibatalkan.', data);
+    } catch (err) {
+        next(err);
+    }
+}
+
+module.exports = {
+    validasiId,
+    validasiPerubahan,
+    detail,
+    ubahStatus,
+    ambilNomorAntrean,
+    antreanAktif,
+    jadwalTersedia,
+    batalAntrean,
+};

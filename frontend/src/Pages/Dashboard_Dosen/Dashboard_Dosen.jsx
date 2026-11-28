@@ -2,7 +2,7 @@
 import "./style.css";
 import { SidebarDosen } from "../../Components/SidebarDosen.jsx";
 
-export const DashboardDosen = ({ onNavigate }) => {
+export const DashboardDosen = ({ onNavigate, onLogout }) => {
   return (
     <div className="dashboard-dosen">
 
@@ -10,6 +10,7 @@ export const DashboardDosen = ({ onNavigate }) => {
       <SidebarDosen
         activePage="dashboard"
         onNavigate={onNavigate}
+        onLogout={onLogout}
       />
 
       {/* Konten utama */}

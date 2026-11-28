@@ -19,7 +19,18 @@ const register = async (req, res, next) => {
     }
 };
 
+const logout = async (req, res, next) => {
+    try {
+        const idPengguna = res.locals.idPengguna;
+        await AuthService.logoutService(idPengguna, req.ip);
+        return sendSuccess(res, 'Logout berhasil.', null, 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     login,
     register,
+    logout,
 };

@@ -16,7 +16,7 @@ const loginService = async ({ nim, username, password }) => {
         SELECT p.id_pengguna, p.id_role, p.status_aktif, r.nama AS role, p.username, p.kata_sandi_hash, p.nama, p.email_npm
         FROM pengguna p
         LEFT JOIN data_referensi r ON r.id_referensi = p.id_role
-        WHERE p.username = $1;
+        WHERE p.username = $1 OR LOWER(p.email_npm) = LOWER($1);
     `, [identitas]);
 
     const user = rows[0];
@@ -97,7 +97,18 @@ const registerService = async ({ id_role, nama, nim, username, email, password }
     return result.rows[0];
 };
 
+const logoutService = async (idPengguna, ipAddress = null) => {
+    if (idPengguna) {
+        await query(`
+            INSERT INTO audit_log (id_user, aksi, nama_tabel, id_data, ip_address, status)
+            VALUES ($1, 'LOGOUT', 'pengguna', $1, $2, 'berhasil');
+        `, [idPengguna, ipAddress || null]);
+    }
+    return true;
+};
+
 module.exports = {
     loginService,
     registerService,
+    logoutService,
 };

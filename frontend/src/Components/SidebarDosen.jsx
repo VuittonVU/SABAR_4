@@ -1,7 +1,7 @@
 
 import "./style.css";
 
-export const SidebarDosen = ({ activePage, onNavigate }) => {
+export const SidebarDosen = ({ activePage, onNavigate, onLogout }) => {
   // Daftar menu sidebar
   const menuSidebar = [
     {
@@ -55,7 +55,7 @@ export const SidebarDosen = ({ activePage, onNavigate }) => {
       <button
         type="button"
         className="sidebar-menu"
-        onClick={() => onNavigate("/login")}
+        onClick={onLogout || (() => onNavigate("/login"))}
       >
         <span>Keluar</span>
       </button>
