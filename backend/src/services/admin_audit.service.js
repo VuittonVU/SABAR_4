@@ -190,6 +190,19 @@ async function catatAksesDitolak(idUser, idData, ipAddress) {
     `, [idUser, idData, ipAddress || null]);
 }
 
+async function daftarAuditLog(idAdmin) {
+    const { rows } = await pool.query(`
+        SELECT a.id_log, a.id_user, p.nama AS nama_user, p.username,
+               a.aksi, a.nama_tabel, a.id_data, a.ip_address, a.status,
+               to_char(a.waktu, 'YYYY-MM-DD HH24:MI:SS') AS waktu
+        FROM audit_log a
+        LEFT JOIN pengguna p ON p.id_pengguna = a.id_user
+        ORDER BY a.id_log DESC
+        LIMIT 100;
+    `);
+    return rows;
+}
+
 module.exports = {
     daftarPengguna,
     buatPengguna,
@@ -199,5 +212,6 @@ module.exports = {
     buatReferensi,
     ubahReferensi,
     hapusReferensi,
+    daftarAuditLog,
     catatAksesDitolak,
 };

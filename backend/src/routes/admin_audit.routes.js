@@ -24,5 +24,6 @@ router.patch(
     controller.ubahReferensi,
 );
 router.delete('/referensi/:idReferensi', controller.validasiId('idReferensi'), controller.hapusReferensi);
+router.get('/log', controller.daftarAudit);
 
 module.exports = router;
