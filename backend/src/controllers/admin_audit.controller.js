@@ -99,4 +99,5 @@ module.exports = {
     buatReferensi: handler((id, unused, body, ip) => service.buatReferensi(id, body, ip), 'Data referensi berhasil dibuat.', 201),
     ubahReferensi: handler((id, idTarget, body, ip) => service.ubahReferensi(id, idTarget, body, ip), 'Data referensi berhasil diperbarui.'),
     hapusReferensi: handler((id, idTarget, body, ip) => service.hapusReferensi(id, idTarget, ip), 'Data referensi berhasil dihapus.'),
+    daftarAudit: handler((id, unused, body, ip) => service.daftarAuditLog(id), 'Daftar audit log berhasil diambil.'),
 };
